@@ -1,0 +1,14 @@
+from mongoengine import Document, StringField, DateTimeField, DecimalField
+
+CURRENCY = ('INR', 'USD')
+
+
+class Contract(Document):
+    tickerId = StringField(max_length=50, required=False, unique=True)
+    symbol = StringField(max_length=50, required=True, unique=True)
+    sec_type = StringField(max_length=50, required=False)
+    exchange = StringField(max_length=50, required=False)
+    currency = StringField(max_length=3, choices=CURRENCY)
+    expiry = DateTimeField()
+    strike = DecimalField()
+    right = StringField()

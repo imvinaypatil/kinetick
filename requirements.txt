@@ -1,0 +1,20 @@
+python-dateutil>=2.5.3
+numpy>=1.11.1
+pandas>=0.22.0
+pytz>=2016.6.1
+requests>=2.10.0
+pyzmq>=15.2.1
+# webull>=0.0.9
+pymongo>=3.11.3
+mongoengine>=0.23.0
+pip~=20.1
+wheel~=0.34.2
+cryptography~=2.9.2
+py~=1.8.1
+lxml~=4.5.0
+setuptools~=41.2.0
+TA-Lib>=0.4.18
+python-telegram-bot>=12.7
+paho-mqtt>=1.5.1
+git+git://github.com/imvinaypatil/webull.git@slave
+# git+git://github.com/tedchou12/webull.git

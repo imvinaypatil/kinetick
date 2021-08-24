@@ -1,0 +1,1 @@
+from .macd_super_strategy import MacdSuperStrategy
