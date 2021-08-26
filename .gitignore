@@ -128,3 +128,6 @@ dmypy.json
 .pyre/
 .idea
 kinetick/tests/did.bin
+/kinetick/factory/did.bin
+/kinetick/factory/orders.csv
+/kinetick/factory/symbols.csv
