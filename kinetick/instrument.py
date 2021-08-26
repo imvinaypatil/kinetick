@@ -439,7 +439,7 @@ class Instrument(str):
         """Get instrument's group if part of an instrument group
         !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def get_positions(self, attr=None):
@@ -465,7 +465,7 @@ class Instrument(str):
             portfolio : dict
                 portfolio data for the instrument
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def get_orders(self):
@@ -475,7 +475,7 @@ class Instrument(str):
             orders : list
                 list of order data as dict
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def get_pending_orders(self):
@@ -485,7 +485,7 @@ class Instrument(str):
             orders : list
                 list of pending order data as dict
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def get_active_order(self, order_type="STOP"):
@@ -499,7 +499,7 @@ class Instrument(str):
             order : object
                 IB Order object of instrument
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def get_trades(self):
@@ -509,7 +509,7 @@ class Instrument(str):
             trades : pd.DataFrame
                 instrument's trade log as DataFrame
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def get_symbol(self):
@@ -535,7 +535,7 @@ class Instrument(str):
             limit_price : int
                 the new limit price of the modified order
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def modify_order_group(self, orderId, entry=None, target=None, stop=None, quantity=None):
@@ -555,7 +555,7 @@ class Instrument(str):
             quantity : int
                 the required quantity of the modified order
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def move_stoploss(self, stoploss):
@@ -567,7 +567,7 @@ class Instrument(str):
                 the new stoploss limit price
 
         """
-        raise "Not supported"
+        raise Exception("Not supported")
 
     # ---------------------------------------
     def get_margin_requirement(self):
@@ -578,7 +578,7 @@ class Instrument(str):
                 margin requirements for instrument
                 (all values are ``None`` for non-futures instruments)
         """
-        raise "Not supported yet!"
+        raise Exception("Not supported yet!")
 
     # ---------------------------------------
     def get_max_contracts_allowed(self, overnight=True):
@@ -594,11 +594,11 @@ class Instrument(str):
             contracts : int
                 maximum contracts allowed to trade (returns ``None`` for non-futures)
         """
-        raise "Not supported yet!"
+        raise Exception("Not supported yet!")
 
     def get_margin_max_contracts(self, overnight=True):
         """ Deprecated (renamed to ``get_max_contracts_allowed``)"""
-        raise "Not supported yet!"
+        raise Exception("Not supported yet!")
 
     # ---------------------------------------
     def get_ticksize(self):
@@ -714,7 +714,7 @@ class Instrument(str):
     @property
     def positions(self):
         """(Property) Shortcut to self.get_positions()"""
-        raise "Not Supported"
+        raise Exception("Not Supported")
 
     # ---------------------------------------
     @property
@@ -726,7 +726,7 @@ class Instrument(str):
     @property
     def portfolio(self):
         """(Property) Shortcut to self.get_portfolio()"""
-        raise "Not Supported"
+        raise Exception("Not Supported")
 
     # ---------------------------------------
     @property

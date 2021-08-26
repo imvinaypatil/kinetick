@@ -139,8 +139,9 @@ class Zerodha():
         self._session.headers.update({'X-Kite-Version': '2.4.0'})
         self.debug = debug
         self.timeout = 60
+        self.maxretry = 3
 
-        self.session_expiry_hook = None
+        self._session_expiry_hook = self.default_session_expiry_hook
 
         # ==== set default values. =====
         self._account = {}
@@ -160,6 +161,19 @@ class Zerodha():
             self._session.headers.update({'Authorization': "enctoken " + res.cookies.get_dict()['enctoken']})
             return
 
+    def default_session_expiry_hook(self, response, **kwargs):
+        logger.info("Running session expiry hook")
+        headers = kwargs['headers'] if 'headers' in kwargs else {}
+        retryAttempts = headers["x-retry"] if "x-retry" in headers else 1
+        if int(retryAttempts) <= self.maxretry:
+            logger.info(f"Retrying request. Attempt: {retryAttempts}")
+            self.login()
+            headers["x-retry"] = str(int(retryAttempts) + 1)
+            kwargs['headers'] = headers
+            return self._request(**kwargs)
+        logger.error("Maximum session retry attempts {} exceeded".format(self.maxretry))
+        raise Exception(f"zerodha: maximum re-login attempts {self.maxretry} failed")
+
     def set_session_expiry_hook(self, method):
         """
         Set a callback hook for session (`TokenError` -- timeout, expiry etc.) errors.
@@ -173,7 +187,7 @@ class Zerodha():
         if not callable(method):
             raise TypeError("Invalid input type. Only functions are accepted.")
 
-        self.session_expiry_hook = method
+        self._session_expiry_hook = method
 
     def place_order(self, variety, tradingsymbol, transaction_type, quantity, product,
                     order_type, exchange='NSE', **kwargs):
@@ -295,8 +309,10 @@ class Zerodha():
         """Alias for sending a DELETE request."""
         return self._request(route, "DELETE", params)
 
-    def _request(self, route, method, parameters=None):
+    def _request(self, route, method, parameters=None, headers=None):
         """Make an HTTP request."""
+        if headers is None:
+            headers = {}
         params = parameters.copy() if parameters else {}
 
         # Form a restful URL
@@ -307,46 +323,48 @@ class Zerodha():
             logger.debug("Request: {method} {url} {params}".format(method=method, url=url, params=params))
 
         try:
-            r = self._session.request(method,
-                                      url,
-                                      data=params if method in ["POST", "PUT"] else None,
-                                      params=params if method in ["GET", "DELETE"] else None,
-                                      # verify=not self.disable_ssl,
-                                      allow_redirects=True,
-                                      timeout=self.timeout)
+            response = self._session.request(method,
+                                             url,
+                                             data=params if method in ["POST", "PUT"] else None,
+                                             params=params if method in ["GET", "DELETE"] else None,
+                                             headers=headers,
+                                             # verify=not self.disable_ssl,
+                                             allow_redirects=True,
+                                             timeout=self.timeout)
         # Any requests lib related exceptions are raised here -
         # http://docs.python-requests.org/en/master/_modules/requests/exceptions/
         except Exception as e:
             raise e
 
         if self.debug:
-            logger.debug("Response: {code} {content}".format(code=r.status_code, content=r.content))
+            logger.debug("Response: {code} {content}".format(code=response.status_code, content=response.content))
 
         # Validate the content type.
-        if "json" in r.headers["content-type"]:
+        if "json" in response.headers["content-type"]:
             try:
-                data = json.loads(r.content.decode("utf8"))
+                data = json.loads(response.content.decode("utf8"))
             except ValueError:
                 raise Exception("Couldn't parse the JSON response received from the server: {content}".format(
-                    content=r.content))
+                    content=response.content))
 
             # api error
             if data.get("error_type"):
                 # Call session hook if its registered and TokenException is raised
-                if self.session_expiry_hook and r.status_code == 403 and data["error_type"] == "TokenException":
-                    self.session_expiry_hook()
+                if self._session_expiry_hook and response.status_code == 403 and data["error_type"] == "TokenException":
+                    self._session_expiry_hook(
+                        response, route=route, method=method, parameters=parameters, headers=headers)
 
                 # native Kite errors
                 # exp = getattr(ex, data["error_type"], ex.GeneralException)
                 raise Exception(data["message"])
 
             return data["data"]
-        elif "csv" in r.headers["content-type"]:
-            return r.content
+        elif "csv" in response.headers["content-type"]:
+            return response.content
         else:
             raise Exception("Unknown Content-Type ({content_type}) with response: ({content})".format(
-                content_type=r.headers["content-type"],
-                content=r.content))
+                content_type=response.headers["content-type"],
+                content=response.content))
 
     @property
     def account(self):
