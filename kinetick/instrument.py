@@ -1,7 +1,8 @@
+import logging
 from pandas import concat as pd_concat
 from kinetick.bot import Bot
-
 from kinetick.models import Position
+
 
 # =============================================
 
@@ -14,6 +15,11 @@ class Instrument(str):
     parent = None
     tick_window = None
     bar_window = None
+
+    _position = None
+
+    bot = Bot()
+    logger = logging.getLogger(__name__)
 
     # ---------------------------------------
     def _set_parent(self, parent):
@@ -153,47 +159,72 @@ class Instrument(str):
         }
 
     # ---------------------------------------
-    def create_position(self, entry_price, stop_loss):
+    def create_position(self, entry_price, stop_loss, quantity=None):
         """
         return trade if all the conditions are met
-        :param quantity:
+        :param quantity: quantity will be calculated based on risk assessment if null.
         :param entry_price:
         :param stop_loss:
         :return: position:Position
         """
         if self.parent.risk_assessor is not None:
-            position = self.parent.risk_assessor.create_position(entry_price, stop_loss)
+            position = self.parent.risk_assessor.create_position(entry_price, stop_loss, quantity=quantity)
             position._tickerId = str(self.get_tickerId())
             position._symbol = self
             position.algo = self.parent.name
             return position
         else:
             direction = "LONG" if entry_price > stop_loss else "SHORT"
-            return Position(tickerId=str(self.get_tickerId()), symbol=self, entry_price=entry_price,
-                            stop=stop_loss, direction=direction, algo=self.parent.name)
+            return Position(_tickerId=str(self.get_tickerId()), _symbol=self, entry_price=entry_price,
+                            stop=stop_loss, _direction=direction, algo=self.parent.name, _quantity=quantity)
 
     # ---------------------------------------
     def open_position(self, position, **kwargs):
-        if position.status:
-            raise Exception("Position can't be opened because the status is already active")
-        position.open_position()
-        self.parent.risk_assessor.enter_position(position)
-        direction = position.direction.replace("LONG", "BUY").replace("SHORT", "SELL")
-        self.order(direction, position.quantity, **kwargs)
+        if position.active or self._position is not None:
+            raise Exception("Position can't be opened because there is an active open position")
+
+        self._position = position
+
+        txn_type = position.direction.replace("LONG", "BUY").replace("SHORT", "SELL")
+        if self.parent.backtest:
+            self.order(txn_type, position.quantity, **kwargs)
+        else:
+            def callback(trade=position, market=False, cancel=False, txn=txn_type, opts=kwargs, **args):
+                if cancel:
+                    self._position = None
+                    self.logger.info(f'Order cancelled - ${trade.symbol}')
+                else:
+                    position.open_position()
+                    self.parent.risk_assessor.enter_position(position)
+                    self.order(txn, trade.quantity, limit_price=0 if market else trade.entry_price,
+                               # target=trade.target, providing
+                               # target will result in BO order
+                               initial_stop=trade.stop, **opts)
+
+            self.bot.send_order(position, "ENTER#" + self,
+                                callback=callback)
 
     # ---------------------------------------
     def close_position(self, position, **kwargs):
-        if not position.status:
+        if not position.active:
             raise Exception("Position can't be closed because the status is inactive")
         position.close_position()
         self.parent.risk_assessor.exit_position(position)
-        signal = "SELL" if position.direction == "LONG" else "BUY"  # EXIT
-        self.order(signal, position.quantity, **kwargs)
+        self._position = None
+
+        txn_type = "SELL" if position.direction == "LONG" else "BUY"  # EXIT
+        if self.parent.backtest:
+            self.order(txn_type, position.quantity, **kwargs)
+        else:
+            self.bot.send_order(position, "EXIT#" + self,
+                                callback=lambda trade=position, txn=txn_type, opts=kwargs, **args:
+                                self.order(txn, trade.quantity, **opts, **args))
+
         if not self.parent.blotter_args["dbskip"]:
             position.save()
 
     # ---------------------------------------
-    def order(self, direction, quantity, **kwargs):
+    def order(self, txn_type, quantity, **kwargs):
         """ Send an order for this instrument
 
         :Parameters:
@@ -231,8 +262,8 @@ class Instrument(str):
             tif: str
                 time in force (DAY, GTC, IOC, GTD). default is ``DAY``
         """
-        direction = direction.upper().replace("LONG", "BUY").replace("SHORT", "SELL")
-        self.parent.order(direction.upper(), self, quantity, **kwargs)
+        txn_type = txn_type.upper().replace("LONG", "BUY").replace("SHORT", "SELL")
+        self.parent.order(txn_type.upper(), self, quantity, **kwargs)
 
     # ---------------------------------------
     def cancel_order(self, orderId):
@@ -367,6 +398,12 @@ class Instrument(str):
         (accepts no parameters)"""
         self.parent.order("FLATTEN", self)
 
+    def clear(self):
+        if self._position and self._position.active:
+            self.logger.warning("Called clear when there's an active position")
+        self._position = None
+        self.logger.warning("Reset performed on " + self)
+
     # ---------------------------------------
     def get_contract(self):
         """Get contract object for this instrument
@@ -388,7 +425,7 @@ class Instrument(str):
         return self.parent.get_contract_details(self)
 
     # ---------------------------------------
-    def get_tickerId(self):
+    def get_tickerId(self) -> object:
         """Get contract's tickerId for this instrument
 
         :Retruns:
@@ -400,17 +437,14 @@ class Instrument(str):
     # ---------------------------------------
     def get_combo(self):
         """Get instrument's group if part of an instrument group
-
-        :Retruns:
-            tickerId : int
-                IB Contract's tickerId
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         """
-        return self.parent.get_combo(self)
+        raise "Not supported"
 
     # ---------------------------------------
     def get_positions(self, attr=None):
         """Get the positions data for the instrument
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Optional:
             attr : string
                 Position attribute to get
@@ -420,48 +454,43 @@ class Instrument(str):
             positions : dict (positions) / float/str (attribute)
                 positions data for the instrument
         """
-        pos = self.parent.get_positions(self)
-        try:
-            if attr is not None:
-                attr = attr.replace("quantity", "position")
-            return pos[attr]
-        except Exception as e:
-            return pos
+        pos = [self._position] if self._position is not None else []
+        return pos
 
     # ---------------------------------------
     def get_portfolio(self):
         """Get portfolio data for the instrument
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Retruns:
             portfolio : dict
                 portfolio data for the instrument
         """
-        return self.parent.get_portfolio(self)
+        raise "Not supported"
 
     # ---------------------------------------
     def get_orders(self):
         """Get orders for the instrument
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Retruns:
             orders : list
                 list of order data as dict
         """
-        return self.parent.get_orders(self)
+        raise "Not supported"
 
     # ---------------------------------------
     def get_pending_orders(self):
         """Get pending orders for the instrument
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Retruns:
             orders : list
                 list of pending order data as dict
         """
-        return self.parent.get_pending_orders(self)
+        raise "Not supported"
 
     # ---------------------------------------
     def get_active_order(self, order_type="STOP"):
         """Get artive order id for the instrument by order_type
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Optional:
             order_type : string
                 the type order to return: STOP (default), LIMIT, MARKET
@@ -470,17 +499,17 @@ class Instrument(str):
             order : object
                 IB Order object of instrument
         """
-        return self.parent.active_order(self, order_type=order_type)
+        raise "Not supported"
 
     # ---------------------------------------
     def get_trades(self):
         """Get orderbook for the instrument
-
-        :Retruns:
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
+        :returns:
             trades : pd.DataFrame
                 instrument's trade log as DataFrame
         """
-        return self.parent.get_trades(self)
+        raise "Not supported"
 
     # ---------------------------------------
     def get_symbol(self):
@@ -495,7 +524,7 @@ class Instrument(str):
     # ---------------------------------------
     def modify_order(self, orderId, quantity=None, limit_price=None):
         """Modify quantity and/or limit price of an active order for the instrument
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Parameters:
             orderId : int
                 the order id to modify
@@ -506,12 +535,12 @@ class Instrument(str):
             limit_price : int
                 the new limit price of the modified order
         """
-        return self.parent.modify_order(self, orderId, quantity, limit_price)
+        raise "Not supported"
 
     # ---------------------------------------
     def modify_order_group(self, orderId, entry=None, target=None, stop=None, quantity=None):
         """Modify bracket order
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Parameters:
             orderId : int
                 the order id to modify
@@ -526,30 +555,24 @@ class Instrument(str):
             quantity : int
                 the required quantity of the modified order
         """
-        return self.parent.modify_order_group(self, orderId=orderId,
-                                              entry=entry, target=target,
-                                              stop=stop, quantity=quantity)
+        raise "Not supported"
 
     # ---------------------------------------
     def move_stoploss(self, stoploss):
         """Modify stop order.
         Auto-discover **orderId** and **quantity** and invokes ``self.modify_order(...)``.
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Parameters:
             stoploss : float
                 the new stoploss limit price
 
         """
-        stopOrder = self.get_active_order(order_type="STOP")
-
-        if stopOrder is not None and "orderId" in stopOrder.keys():
-            self.modify_order(orderId=stopOrder['orderId'],
-                              quantity=stopOrder['quantity'], limit_price=stoploss)
+        raise "Not supported"
 
     # ---------------------------------------
     def get_margin_requirement(self):
         """ Get margin requirements for intrument (futures only)
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Retruns:
             margin : dict
                 margin requirements for instrument
@@ -562,7 +585,7 @@ class Instrument(str):
         """ Get maximum contracts allowed to trade
         baed on required margin per contract and
         current account balance (futures only)
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Parameters:
             overnight : bool
                 Calculate based on Overnight margin (set to ``False`` to use Intraday margin req.)
@@ -591,7 +614,7 @@ class Instrument(str):
     # ---------------------------------------
     def pnl_in_range(self, min_pnl, max_pnl):
         """ Check if instrument pnl is within given range
-
+        !IMPORTANT: NOT SUPPORTED. UNSTABLE API
         :Parameters:
             min_pnl : flaot
                 minimum session pnl (in USD / IB currency)
@@ -691,19 +714,19 @@ class Instrument(str):
     @property
     def positions(self):
         """(Property) Shortcut to self.get_positions()"""
-        return self.get_positions()
+        raise "Not Supported"
 
     # ---------------------------------------
     @property
     def position(self):
-        """(Property) Shortcut to self.get_positions(position)"""
-        return self.get_positions('position')
+        """(Property) Shortcut to self._position"""
+        return self._position
 
     # ---------------------------------------
     @property
     def portfolio(self):
         """(Property) Shortcut to self.get_portfolio()"""
-        return self.get_portfolio()
+        raise "Not Supported"
 
     # ---------------------------------------
     @property

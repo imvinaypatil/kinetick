@@ -47,11 +47,11 @@ class RiskAssessor(Borg):
         self.available_margin = self.initial_margin
         self.active_positions.clear()
 
-    def _should_trade(self, entry_price, stop_loss):
+    def _should_trade(self, entry_price, stop_loss, quantity=None):
         spread = abs(entry_price - stop_loss)
         spread = 5 * round(spread / 5, 2)
-        quantity = floor(max(1, int(self.risk_per_trade / spread)))
-        margin = quantity * spread
+        _quantity = quantity or floor(max(1, int(self.risk_per_trade / spread)))
+        margin = _quantity * spread
         should_trade = True
         reason = None
 
@@ -63,30 +63,36 @@ class RiskAssessor(Borg):
             reason = "Margin exceeds"
         elif len(self.active_positions) >= self.max_trades:
             should_trade = False
-            reason = f'current positions {self.active_positions} exceed max trade limit {self.max_trades}'
-        elif (entry_price * quantity) >= self.capital:
+            reason = f'Exceeds max trade limit {self.max_trades}'
+        elif (entry_price * _quantity) >= self.capital:
             should_trade = False
-            reason = f'Insufficient Capital. required: {entry_price * quantity} available: {self.capital}'
+            reason = f'Insufficient Capital. required: {entry_price * _quantity} available: {self.capital}'
+        elif quantity and int(quantity) > floor(max(1, int(self.risk_per_trade / spread))):
+            should_trade = False
+            reason = f'given quantity: {quantity} exceeds risk per trade: {self.risk_per_trade}, ' \
+                     f'max allowed quantity {_quantity}'
 
+        quantity = _quantity
         return should_trade, spread, quantity, reason
 
-    def create_position(self, entry_price, stop_loss):
+    def create_position(self, entry_price, stop_loss, quantity=None):
         """
         return trade if all the conditions are met
+        :param quantity: int
         :param entry_price:
         :param stop_loss:
-        :return: should_trade: Bool, trade: Trade
+        :return: should_trade: Bool, position: Position
         """
-        should_trade, spread, quantity, reason = self._should_trade(entry_price, stop_loss)
+        should_trade, spread, quantity, reason = self._should_trade(entry_price, stop_loss, quantity=quantity)
         if not should_trade:
-            raise Exception(f'Trade can not be made voids risk margins {reason}')
+            raise Exception(f'Trade can not be made voids risk parameters {reason}')
 
         direction = "LONG" if stop_loss < entry_price else "SHORT"
         target = 5 * round((spread * self.risk2reward) / 5, 2)
         target = entry_price + target if direction == "LONG" else entry_price - target
 
-        position = Position(quantity=quantity, entry_price=entry_price, target=target,
-                            stop=stop_loss, direction=direction)
+        position = Position(_quantity=quantity, entry_price=entry_price, target=target,
+                            stop=stop_loss, _direction=direction)
 
         return position
 
@@ -94,7 +100,8 @@ class RiskAssessor(Borg):
     def enter_position(self, position):
         if position.entry_time is None:
             position.entry_time = datetime.now()
-        should_trade, spread, quantity, reason = self._should_trade(position.entry_price, position.stop)
+        should_trade, spread, quantity, reason = self._should_trade(position.entry_price, position.stop,
+                                                                    quantity=position.quantity)
         if not should_trade:
             raise Exception(f'Trade can not be made void risk margins {reason}')
         self.active_positions.append(position)

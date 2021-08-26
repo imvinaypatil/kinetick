@@ -11,8 +11,8 @@ class Position(DynamicDocument):
     _symbol = StringField(max_length=50, required=False, db_field="symbol")
     datetime = DateTimeField(required=True, default=datetime.utcnow)
     algo = StringField(max_length=100)
-    direction = StringField(max_length=20, choices=('LONG', 'SHORT'))
-    quantity = IntField(default=0)
+    _direction = StringField(max_length=20, choices=('LONG', 'SHORT'), db_field="direction")
+    _quantity = IntField(default=0, db_field="quantity")
     entry_time = DateTimeField()
     exit_time = DateTimeField()
     exit_reason = StringField()
@@ -23,7 +23,7 @@ class Position(DynamicDocument):
     entry_price = FloatField(default=0.0)
     exit_price = FloatField(default=0.0)
     realized_pnl = FloatField(default=0.0)
-    active = BooleanField(default=False)
+    _active = BooleanField(default=False, db_field="active")
     opt_ticker = StringField(max_length=50, required=False)
     opt_strike = FloatField(required=False)
     opt_type = StringField(require=False),
@@ -32,36 +32,52 @@ class Position(DynamicDocument):
     underlying = StringField(required=False)
 
     def open_position(self):
-        if self.direction is None:
+        if self._direction is None:
             raise Exception("no direction provided")
-        if self.quantity is None:
+        if self._quantity is None:
             raise Exception("no quantity provided")
         if self.entry_time is None:
             self.entry_time = datetime.now()
-        self.active = True
+        self._active = True
 
     def close_position(self):
-        if self.direction is None:
+        if self._direction is None:
             raise Exception("no direction provided")
-        if self.quantity is None:
+        if self._quantity is None:
             raise Exception("no quantity provided")
         if self.exit_time is None:
             self.exit_time = datetime.now()
-        self.active = False
+        self._active = False
 
     def pnl(self):
         pnl = abs(self.exit_price - self.entry_price)
 
         sl_hit = False
-        if self.exit_price <= self.entry_price and self.direction == "LONG":
+        if self.exit_price <= self.entry_price and self._direction == "LONG":
             sl_hit = True
-        elif self.exit_price >= self.entry_price and self.direction == "SHORT":
+        elif self.exit_price >= self.entry_price and self._direction == "SHORT":
             sl_hit = True
 
         pnl = -pnl if sl_hit else pnl
-        pnl = pnl * self.quantity
+        pnl = pnl * self._quantity
         return pnl
 
     @property
-    def status(self):
-        return self.active
+    def active(self):
+        return self._active
+
+    @property
+    def ticker_id(self):
+        return self._tickerId
+
+    @property
+    def symbol(self):
+        return self._symbol
+
+    @property
+    def direction(self):
+        return self._direction
+
+    @property
+    def quantity(self):
+        return self._quantity

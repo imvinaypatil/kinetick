@@ -535,12 +535,12 @@ class Algo(Broker):
     # ---------------------------------------
     # shortcuts to broker._create_order
     # ---------------------------------------
-    def order(self, signal, symbol, quantity=0, **kwargs):
+    def order(self, txn_type, symbol, quantity=0, **kwargs):
         """ Send an order for the selected instrument
 
         :Parameters:
 
-            direction : string
+            txn_type : string
                 Order Type (BUY/SELL, EXIT/FLATTEN)
             symbol : string
                 instrument symbol
@@ -581,9 +581,9 @@ class Algo(Broker):
             tif: str
                 Time in force (DAY, GTC, IOC, GTD). default is ``DAY``
         """
-        self.log_algo.info('ORDER: %s %4d %s %s', signal,
+        self.log_algo.info('ORDER: %s %4d %s %s', txn_type,
                            quantity, symbol, kwargs)
-        if signal.upper() == "EXIT" or signal.upper() == "FLATTEN":
+        if txn_type.upper() == "EXIT" or txn_type.upper() == "FLATTEN":
             position = self.get_positions(symbol)
             if position['position'] == 0:
                 return
@@ -613,19 +613,19 @@ class Algo(Broker):
             if best_price is True and limit_price > 0:
                 instrument = self.get_instrument(symbol)
                 order_book = instrument.get_orderbook()
-                running_price = float(order_book['bid'][0]) if signal.upper() != "BUY" else float(order_book['ask'][0])
-                running_size = float(order_book['bidsize'][0]) if signal.upper() != "BUY" else float(
+                running_price = float(order_book['bid'][0]) if txn_type.upper() != "BUY" else float(order_book['ask'][0])
+                running_size = float(order_book['bidsize'][0]) if txn_type.upper() != "BUY" else float(
                     order_book['asksize'][0])
 
                 if running_price > 0 and running_size >= abs(quantity):
-                    if signal.upper() != "BUY":
+                    if txn_type.upper() != "BUY":
                         kwargs['limit_price'] = running_price if running_price > limit_price else limit_price
                     else:
                         kwargs['limit_price'] = running_price if running_price < limit_price else limit_price
 
             kwargs['symbol'] = symbol
             kwargs['quantity'] = abs(quantity)
-            kwargs['direction'] = signal.upper()
+            kwargs['direction'] = txn_type.upper()
             # kwargs['trigger_price'] = running_price if running_price > 0 else limit_price
 
             try:
@@ -934,7 +934,7 @@ class Algo(Broker):
         :return:
         """
         bars = self.broker.get_bars(
-            tickerId=self.broker._tickerId(symbol),
+            tickerId=self.broker.tickerId(symbol),
             lookback=lookback,
             interval='m' + str(Timeframes.timeframe_to_minutes(Timeframes.to_timeframe(self.resolution)))
         )

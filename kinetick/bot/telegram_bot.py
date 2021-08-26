@@ -32,6 +32,7 @@ class TelegramBot(DumbBot):
         self._password = rand_pass(6)
         self._on_connected_listeners = set()
         self._callbacks_store = {}
+        self._order_number = 0
         if __TOKEN__:
             self.bot = Updater(__TOKEN__, use_context=True)
             self.bot.dispatcher.add_handler(CommandHandler("start", self._start_cmd_handler))
@@ -60,30 +61,32 @@ class TelegramBot(DumbBot):
         for user in self._chat_ids and self.bot:
             self.bot.bot.send_message(text=msg, chat_id=user, parse_mode='Markdown')
 
-    def send_order(self, order, caller, callback=None):
-        keyboard = [[InlineKeyboardButton("Limit", callback_data=caller + "$limit"),
-                     InlineKeyboardButton("Cancel", callback_data=caller + "$cancel"),
-                     InlineKeyboardButton("Market", callback_data=caller + "$market")]]
+    def send_order(self, position, signal, callback=None, **kwargs):
+        self._order_number += 1
+        key = signal + str(self._order_number)
+        keyboard = [[InlineKeyboardButton("Limit", callback_data=key + "$limit"),
+                     InlineKeyboardButton("Cancel", callback_data=key + "$cancel"),
+                     InlineKeyboardButton("Market", callback_data=key + "$market")]]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        tradingview_symbol = order.symbol
+        tradingview_symbol = position.symbol
         tradingview_symbol = 'NIFTY' if tradingview_symbol == 'NSEI' else tradingview_symbol
         tradingview_symbol = 'BANKNIFTY' if tradingview_symbol == 'NSEBANK' else tradingview_symbol
 
-        message = f'Symbol: #[{order.symbol}](https://tradingview.com/chart/?symbol={tradingview_symbol}) \n ' \
-                  f'Signal: #{caller} \n Direction: *#{order.direction}* \n ' \
-                  f'Strategy #{order.algo} \n' \
-                  f'Entry Price:  {order.entry_price:.2f}  \n Quantity:  {order.quantity} \n ' \
-                  f'Stoploss: {order.stop:.2f} \n Target: {order.target:.2f} \n ' \
-                  f'Exit Price: {order.exit_price:.2f} \n'
+        message = f'Symbol: [{position.symbol}](https://tradingview.com/chart/?symbol={tradingview_symbol}) \n ' \
+                  f'Signal: {signal} \n Direction: *#{position.direction}* \n ' \
+                  f'Strategy #{position.algo} \n' \
+                  f'Entry Price:  {position.entry_price:.2f}  \n Quantity:  {position.quantity} \n ' \
+                  f'Stoploss: {position.stop:.2f} \n Target: {position.target:.2f} \n ' \
+                  f'Exit Price: {position.exit_price:.2f} \n'
         for user in self._chat_ids:
             self.bot.bot.send_message(text=message, chat_id=user, parse_mode='Markdown')
             if user == self._verified_chat_id:
-                self.bot.bot.send_message(text=f'{order.symbol} call confirm?', reply_markup=reply_markup, chat_id=user)
+                self.bot.bot.send_message(text=f'{position.symbol} call confirm?', reply_markup=reply_markup, chat_id=user)
         if callback is not None:
             if callable(callback):
-                self._callbacks_store[caller] = callback
+                self._callbacks_store[key] = callback
 
     def add_connected_listener(self, listener):
         self._on_connected_listeners.add(listener)
@@ -127,8 +130,9 @@ class TelegramBot(DumbBot):
                     market = True if cmd == "market" else False
                     cancel = True if cmd == "cancel" else False
                     callback(market=market, cancel=cancel)
+                    query.edit_message_text(text="{} order request sent".format(cmd))
                 except Exception as e:
                     logger.error('Error executing command', e)
-            query.edit_message_text(text="Selected option: {}".format(cmd))
+                    query.edit_message_text(text="Error sending order request. Reason: {}".format(e))
         else:
             query.edit_message_text(text="Can not execute order.")

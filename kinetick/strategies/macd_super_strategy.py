@@ -20,11 +20,9 @@
 import json
 import logging
 import threading
-import time as timer
 import os
 
 from kinetick.utils import utils
-from kinetick.models import Position
 
 from kinetick.algo import Algo
 from kinetick.bot import Bot
@@ -175,27 +173,15 @@ class MacdSuperStrategy(Algo):
             logger.debug("--------\nFAST TA - %s\n %s", instrument, self.ti[instrument]['fast_ta'][-1:])
 
     # ---------------------------------------
-    def exit_trade(self, instrument, trade):
+    def exit_trade(self, instrument):
         try:
             logger.info(f'Exit position {instrument}')
-            index = self.positions.index(trade)
+            position = instrument.position
+            instrument.close_position(position)
 
-            if self.backtest:
-                instrument.close_position(trade,
-                                          limit_price=trade.exit_price,
-                                          target=trade.target,
-                                          initial_stop=trade.stop)
-            else:
-                self.bot.send_order(trade, caller="EXIT_" + instrument + "_position",
-                                callback=lambda trade=trade, **kwargs: instrument.close_position(trade))
-
-            del self.positions[index]
-
-            self.record(time=trade.exit_time)
-            self.record(EXIT_REASON=trade.exit_reason)
-            self.record(FAST_TA=self.ti[instrument]['fast_ta'][-1:].to_dict(orient='records'))
-            self.record(SLOW_TA=self.ti[instrument]['slow_ta'][-1:].to_dict(orient='records'))
-            return trade
+            self.record(time=position.exit_time)
+            self.record(EXIT_REASON=position.exit_reason)
+            return position
         except Exception as e:
             logger.error(e)
 
@@ -203,34 +189,10 @@ class MacdSuperStrategy(Algo):
     def enter_trade(self, instrument, entry_price, stop_loss):
         try:
             logger.info(f'Enter position {instrument}')
-            trade = instrument.create_position(entry_price, stop_loss)
-            trade.algo = "MacdStochSuperStrategy"
-            self.positions.append(trade)
+            position = instrument.create_position(entry_price, stop_loss)
 
-            if self.backtest:
-                instrument.open_position(trade,
-                                         limit_price=trade.entry_price,
-                                         target=trade.target,
-                                         initial_stop=trade.stop)
-            else:
-                def callback(trade=trade, market=False, cancel=False, **kwargs):
-                    if cancel:
-                        index = self.positions.index(trade)
-                        del self.positions[index]
-                        logger.info(f'Order cancelled - ${trade.symbol}')
-                    else:
-                        instrument.open_position(trade,
-                                                 limit_price=0 if market else trade.entry_price,
-                                                 # target=trade.target, providing
-                                                 # target will result in BO order
-                                                 initial_stop=trade.stop)
-
-                self.bot.send_order(trade, caller="ENTER_" + instrument + "_position",
-                                callback=callback)
-
-            self.record(FAST_TA=str(self.ti[instrument]['fast_ta'][-1:].to_dict(orient='records')))
-            self.record(SLOW_TA=str(self.ti[instrument]['slow_ta'][-1:].to_dict(orient='records')))
-            return trade
+            instrument.open_position(position)
+            return position
         except Exception as e:
             logger.error(e)
 
@@ -304,7 +266,7 @@ class MacdSuperStrategy(Algo):
         fast_ta = self.ti[instrument]['fast_ta'].to_dict(orient='records')
 
         # validate stop-loss and target hit
-        open_positions = [trade for trade in self.positions if trade.symbol == instrument]
+        open_positions = [instrument.position] if instrument.position is not None else []
         for position in open_positions:
             """Exit checks"""
             direction = position.direction
@@ -323,21 +285,21 @@ class MacdSuperStrategy(Algo):
 
                 if sl_hit:
                     position.exit_reason = 'SL Hit'
-                    self.exit_trade(instrument, position)
+                    self.exit_trade(instrument)
 
                 elif (fast_ta[-1]['signal'] == 'B' or (fast_ta[-1]['slow_k'] > fast_ta[-1]['slow_d'])) \
                         and position.direction == "SHORT":
                     position.exit_reason = 'Target Hit'
-                    self.exit_trade(instrument, position)
+                    self.exit_trade(instrument)
 
                 elif (fast_ta[-1]['signal'] == 'S' or (fast_ta[-1]['slow_k'] < fast_ta[-1]['slow_d'])) \
                         and position.direction == "LONG":
                     position.exit_reason = 'Target Hit'
-                    self.exit_trade(instrument, position)
+                    self.exit_trade(instrument)
                 else:
                     # TODO trail stop-loss
                     position.exit_reason = 'Target Hit'
-                    self.exit_trade(instrument, position)
+                    self.exit_trade(instrument)
 
         """ entry conditions """
         if len(open_positions) == 0:
@@ -379,13 +341,13 @@ class MacdSuperStrategy(Algo):
         # increase counter and do nothing if nor 10th tick
         self.count[instrument] += 1
 
-        # if self.count[instrument] % 10 != 0:
-        #     return
+        if self.count[instrument] % 100 != 0:
+            return
 
         # get last tick dict
-        # tick = instrument.get_ticks(lookback=1, as_dict=True)
-        # time = tick['datetime']
-        # self.apply(instrument, tick['last'], time)
+        tick = instrument.get_ticks(lookback=1, as_dict=True)
+        time = tick['datetime']
+        self.apply(instrument, tick['last'], time)
 
     # ---------------------------------------
     def on_bar(self, instrument):
@@ -395,8 +357,7 @@ class MacdSuperStrategy(Algo):
             self.fill_slow_ta(instrument)
             self.fill_fast_ta(instrument)
             bar = instrument.get_bars(lookback=1, as_dict=True)
-            self.apply(instrument, bar['low'], bar['datetime'])
-            self.apply(instrument, bar['high'], bar['datetime'])
+            self.apply(instrument, bar['close'], bar['datetime'])
 
     # --------------------------------------------
     def simulate(self, instrument):
@@ -427,7 +388,7 @@ if __name__ == "__main__":
         output="/Users/vinaygoudapatil/Desktop/vinay/github/qtpylib/examples/orders.csv",
         start="2020-07-01 00:15:00",
         risk_assessor=RiskAssessor(max_trades=4, initial_capital=120000, initial_margin=1000,
-                                  risk2reward=1.2, risk_per_trade=100),
+                                   risk2reward=1.2, risk_per_trade=100),
         # backfill=True,
         timezone="Asia/Calcutta"
     )
