@@ -637,17 +637,17 @@ class Algo(Broker):
                 pass
 
             if not self.backtest:
-                self._create_order(**kwargs)
+                return self._create_order(**kwargs)
 
     # ---------------------------------------
-    def cancel_order(self, orderId):
+    def cancel_order(self, order_id):
         """ Cancels a un-filled order
 
         Parameters:
-            orderId : int
+            order_id : int
                 Order ID
         """
-        self._cancel_order(orderId)
+        return self._cancel_order(order_id)
 
     # ---------------------------------------
     def record(self, *args, **kwargs):

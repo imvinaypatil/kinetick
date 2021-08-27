@@ -1,4 +1,4 @@
-# Copyright [2021] [vin8tech]
+# Copyright 2021 vin8tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,17 +38,25 @@ class RiskAssessor(Borg):
         self.risk_per_trade = risk_per_trade
         self.pnl = 0
         self.active_positions = []
+        self.win_trades = 0
+        self.loss_trades = 0
 
         if initial_capital < initial_margin:
             raise Exception("Capital is lower than available_margin")
 
-        Bot().add_command_handler("overview", self.availableMarginHandler, "see available margin")
+        Bot().add_command_handler("report", self.availableMarginHandler, "Get report")
 
     def availableMarginHandler(self, update, context):
-        update.message.reply_text(f'Available margin: {self.available_margin:.2f} \n '
-                                  f'Active Trades: {len(self.active_positions)} \n'
-                                  f'Available capital: {self.capital} \n'
-                                  f'PNL: {self.pnl} \n')
+        msg = "```\n" \
+              "Available margin: {} \n" \
+              "Active Trades: {} \n" \
+              "Available capital: {} \n" \
+              "PNL: {} \n" \
+              "Win Trades: {} \n" \
+              "Loss Trades: {} \n" \
+              "```".format(self.available_margin, len(self.active_positions),
+                           self.capital, self.pnl, self.win_trades, self.loss_trades)
+        update.message.reply_text(msg, parse_mode="MarkdownV2")
 
     @staticmethod
     def get_default_instance():
@@ -133,6 +141,10 @@ class RiskAssessor(Borg):
         self.available_margin = round(self.available_margin + pnl, 2)
         self.capital = self.capital + pnl
         self.pnl += pnl
+        if pnl > 0:
+            self.win_trades += 1
+        else:
+            self.loss_trades += 1
 
         index = self.active_positions.index(position)
         del self.active_positions[index]

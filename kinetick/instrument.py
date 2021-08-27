@@ -1,6 +1,27 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Modified version from QTPyLib: Quantitative Trading Python Library
+# https://github.com/ranaroussi/qtpylib
+# Copyright 2016-2018 Ran Aroussi
+#
+# Modified by vin8tech
+# Copyright 2019-2021 vin8tech
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import logging
 from pandas import concat as pd_concat
 from kinetick.bot import Bot
+from kinetick.enums import PositionType
 from kinetick.models import Position
 
 
@@ -159,9 +180,10 @@ class Instrument(str):
         }
 
     # ---------------------------------------
-    def create_position(self, entry_price, stop_loss, quantity=None):
+    def create_position(self, entry_price, stop_loss, quantity=None, pos_type=PositionType.CO):
         """
         return trade if all the conditions are met
+        :param pos_type: position variety. ex MIS, CO, CNC. default to MIS. Possible types are defined in enums.PositionType
         :param quantity: quantity will be calculated based on risk assessment if null.
         :param entry_price:
         :param stop_loss:
@@ -172,11 +194,13 @@ class Instrument(str):
             position._tickerId = str(self.get_tickerId())
             position._symbol = self
             position.algo = self.parent.name
+            position._variety = pos_type
             return position
         else:
             direction = "LONG" if entry_price > stop_loss else "SHORT"
             return Position(_tickerId=str(self.get_tickerId()), _symbol=self, entry_price=entry_price,
-                            stop=stop_loss, _direction=direction, algo=self.parent.name, _quantity=quantity)
+                            stop=stop_loss, _direction=direction, algo=self.parent.name, _quantity=quantity,
+                            _variety=pos_type)
 
     # ---------------------------------------
     def open_position(self, position, **kwargs):
@@ -196,13 +220,15 @@ class Instrument(str):
                 else:
                     position.open_position()
                     self.parent.risk_assessor.enter_position(position)
-                    self.order(txn, trade.quantity, limit_price=0 if market else trade.entry_price,
-                               # target=trade.target, providing
-                               # target will result in BO order
-                               initial_stop=trade.stop, **opts)
-
-            self.bot.send_order(position, "ENTER#" + self,
-                                callback=callback)
+                    order_id = self.order(txn, trade.quantity, limit_price=0 if market else trade.entry_price,
+                                          # target=trade.target, providing
+                                          # target will result in BO order
+                                          pos_type=trade.variety,
+                                          initial_stop=trade.stop, **opts)
+                    position._broker_order_id = order_id
+                    if not self.parent.blotter_args["dbskip"]:
+                        position.save()
+            self.bot.send_order(position, "**ENTER** #" + self, callback=callback)
 
     # ---------------------------------------
     def close_position(self, position, **kwargs):
@@ -216,9 +242,13 @@ class Instrument(str):
         if self.parent.backtest:
             self.order(txn_type, position.quantity, **kwargs)
         else:
-            self.bot.send_order(position, "EXIT#" + self,
-                                callback=lambda trade=position, txn=txn_type, opts=kwargs, **args:
-                                self.order(txn, trade.quantity, **opts, **args))
+            def callback(trade=position, txn=txn_type, opts=kwargs, **args):
+                if trade.variety == PositionType.MIS or trade.variety == PositionType.CNC:
+                    # TODO if MIS verify if position is open with broker executed.
+                    self.order(txn, trade.quantity, pos_type=trade.variety, **opts, **args)
+                else:
+                    self.cancel_order(trade.broker_order_id)
+            self.bot.send_order(position, "**EXIT** #" + self, callback=callback)
 
         if not self.parent.blotter_args["dbskip"]:
             position.save()
@@ -263,10 +293,10 @@ class Instrument(str):
                 time in force (DAY, GTC, IOC, GTD). default is ``DAY``
         """
         txn_type = txn_type.upper().replace("LONG", "BUY").replace("SHORT", "SELL")
-        self.parent.order(txn_type.upper(), self, quantity, **kwargs)
+        return self.parent.order(txn_type.upper(), self, quantity, **kwargs)
 
     # ---------------------------------------
-    def cancel_order(self, orderId):
+    def cancel_order(self, order_id):
         """ Cancels an order for this instrument
 
         :Parameters:
@@ -274,7 +304,7 @@ class Instrument(str):
                 Order ID
         """
 
-        self.parent.cancel_order(orderId)
+        return self.parent.cancel_order(order_id)
 
     # ---------------------------------------
     def market_order(self, direction, quantity, **kwargs):

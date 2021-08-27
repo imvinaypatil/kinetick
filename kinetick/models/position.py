@@ -16,7 +16,9 @@ class Position(DynamicDocument):
     entry_time = DateTimeField()
     exit_time = DateTimeField()
     exit_reason = StringField()
-    order_type = StringField()
+    order_type = StringField()  # LIMIT/MARKET
+    _broker_order_id = StringField(db_field="broker_order_id")
+    _variety = StringField(db_field="variety")
     market_price = FloatField()
     target = FloatField(default=0.0)
     stop = FloatField(default=0.0)
@@ -28,7 +30,7 @@ class Position(DynamicDocument):
     opt_strike = FloatField(required=False)
     opt_type = StringField(require=False),
     opt_expiry = StringField(required=False),
-    sec_type = StringField(default='cash')  # TODO add enum
+    sec_type = StringField(default='STK')  # TODO add enum
     underlying = StringField(required=False)
 
     def open_position(self):
@@ -81,3 +83,11 @@ class Position(DynamicDocument):
     @property
     def quantity(self):
         return self._quantity
+
+    @property
+    def broker_order_id(self):
+        return self._broker_order_id
+
+    @property
+    def variety(self):
+        return self._variety

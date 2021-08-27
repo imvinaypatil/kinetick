@@ -7,6 +7,8 @@ import requests
 import logging
 import os
 
+from kinetick.enums import SecurityType, PositionType
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=os.getenv('LOGLEVEL') or logging.INFO)
 
@@ -254,8 +256,12 @@ class Zerodha():
             "parent_order_id": parent_order_id
         })["order_id"]
 
-    def exit_order(self, variety, order_id, parent_order_id=None):
-        """Exit a BO/CO order."""
+    def exit_order(self, order_id, variety=None, parent_order_id=None):
+        """Exit order."""
+        if variety is None:
+            order = self.order_by_id(order_id)[-1]
+            variety = order['variety']
+            parent_order_id = order['parent_order_id']
         self.cancel_order(variety, order_id, parent_order_id=parent_order_id)
 
     def _format_response(self, data):
@@ -369,6 +375,15 @@ class Zerodha():
     @property
     def account(self):
         return self._account
+
+    def get_order_variety(self, sec_type, pos_type):
+        if sec_type == SecurityType.OPTION:
+            return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_MIS
+        if sec_type == SecurityType.STOCK and pos_type == PositionType.CO:
+            return Zerodha.VARIETY_CO, Zerodha.PRODUCT_MIS
+        if sec_type == SecurityType.STOCK and pos_type == PositionType.MIS:
+            return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_MIS
+        return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_CNC
 
 
 if __name__ == "__main__":

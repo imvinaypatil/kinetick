@@ -1,3 +1,24 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Modified version from QTPyLib: Quantitative Trading Python Library
+# https://github.com/ranaroussi/qtpylib
+# Copyright 2016-2018 Ran Aroussi
+#
+# Modified by vin8tech
+# Copyright 2019-2021 vin8tech
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import atexit
 import hashlib
 import logging
@@ -16,6 +37,7 @@ import pandas as pd
 from mongoengine import connect
 
 from kinetick.blotter import load_blotter_args, Blotter
+from kinetick.enums import SecurityType, PositionType
 from kinetick.instrument import Instrument
 from kinetick.lib.brokers import Webull, Zerodha
 from kinetick.utils import utils
@@ -463,9 +485,9 @@ class Broker():
 
     # ---------------------------------------
     def _create_order(self, symbol, direction, quantity, order_type="",
-                      limit_price=0, expiry=0, orderId=0, target=0,
+                      limit_price=0, expiry=0, order_id=0, target=0,
                       initial_stop=0, trail_stop_at=0, trail_stop_by=0,
-                      stop_limit=False, trail_stop_type='percent', **kwargs):
+                      stop_limit=False, trail_stop_type='percent', pos_type=None, **kwargs):
 
         # fix prices to comply with contract's min-tick
         ticksize = self.get_contract_details(symbol)['m_minTick']
@@ -484,7 +506,7 @@ class Broker():
 
         # modify order?
         if order_type.upper() == "MODIFY":
-            self.modify_order(symbol, orderId, quantity, limit_price)
+            self.modify_order(symbol, order_id, quantity, limit_price)
             return
 
         # continue...
@@ -519,80 +541,66 @@ class Broker():
                 trail_stop_at > 0) | (trail_stop_by > 0)
         trigger_price = kwargs['trigger_price'] if 'trigger_price' in kwargs else initial_stop
         # create & submit order
-        sec_type = kwargs['sec_type'] if 'sec_type' in kwargs else 'cash'
+        sec_type = kwargs['sec_type'] if 'sec_type' in kwargs else SecurityType.STOCK
+        pos_type = pos_type or PositionType.CO if bracket else None
+        variety, product = self.zerodha.get_order_variety(sec_type, pos_type)
 
-        if sec_type == 'option':
+        if sec_type == SecurityType.OPTION:
             tradingsymbol = kwargs['opt_ticker']
-            order_id = self.zerodha.place_order(variety=Zerodha.VARIETY_REGULAR, tradingsymbol=tradingsymbol,
+            order_id = self.zerodha.place_order(variety=variety, tradingsymbol=tradingsymbol,
                                                 transaction_type=direction.upper(),
-                                                quantity=abs(order_quantity), product=Zerodha.PRODUCT_MIS,
+                                                quantity=abs(order_quantity), product=product,
                                                 order_type=order_type,
                                                 exchange=Zerodha.EXCHANGE_NFO, price=limit_price,
                                                 trigger_price=trigger_price, stoploss=initial_stop)
-            orderId = order_id
-            self.log_broker.info('PLACED ORDER: %s %s', self.broker.contract_to_dict(
-                contract), order_id)
-
-        elif sec_type == 'cash' and bracket:
-            # bracket order
-            order_id = self.zerodha.place_order(variety=Zerodha.VARIETY_CO, tradingsymbol=symbol,
+        else:
+            # simple order
+            order_id = self.zerodha.place_order(variety=variety, tradingsymbol=symbol,
                                                 transaction_type=direction.upper(),
-                                                quantity=abs(order_quantity), product=Zerodha.PRODUCT_MIS,
+                                                quantity=abs(order_quantity), product=product,
                                                 order_type=order_type,
                                                 exchange=Zerodha.EXCHANGE_NSE, price=limit_price,
                                                 trigger_price=trigger_price, stoploss=initial_stop)
-            orderId = order_id
-            self.log_broker.info('PLACED ORDER: %s %s', self.broker.contract_to_dict(
-                contract), order_id)
+        self.log_broker.debug('PLACED ORDER: %s %s', self.broker.contract_to_dict(
+            contract), order_id)
 
-        else:
-            # simple order
-            order_id = self.zerodha.place_order(variety=Zerodha.VARIETY_REGULAR, tradingsymbol=symbol,
-                                                transaction_type=direction.upper(),
-                                                quantity=abs(order_quantity), product=Zerodha.PRODUCT_CNC,
-                                                order_type=order_type,
-                                                exchange=Zerodha.EXCHANGE_NSE, price=limit_price)
-            orderId = order_id
-            self.log_broker.debug('PLACED ORDER: %s %s', self.broker.contract_to_dict(
-                contract), order_id)
+        # triggered trailing stop?
+        # if trail_stop_by != 0 and trail_stop_at != 0:
+        #     trail_stop_params = {
+        #         "symbol": symbol,
+        #         "quantity": -order_quantity,
+        #         "triggerPrice": trail_stop_at,
+        #         "parentId": order["entryOrderId"],
+        #         "stopOrderId": order["stopOrderId"]
+        #     }
+        #     if trail_stop_type.lower() == 'amount':
+        #         trail_stop_params["trailAmount"] = trail_stop_by
+        #     else:
+        #         trail_stop_params["trailPercent"] = trail_stop_by
+        #     self.ibConn.createTriggerableTrailingStop(**trail_stop_params)
 
-            # triggered trailing stop?
-            # if trail_stop_by != 0 and trail_stop_at != 0:
-            #     trail_stop_params = {
-            #         "symbol": symbol,
-            #         "quantity": -order_quantity,
-            #         "triggerPrice": trail_stop_at,
-            #         "parentId": order["entryOrderId"],
-            #         "stopOrderId": order["stopOrderId"]
-            #     }
-            #     if trail_stop_type.lower() == 'amount':
-            #         trail_stop_params["trailAmount"] = trail_stop_by
-            #     else:
-            #         trail_stop_params["trailPercent"] = trail_stop_by
-            #     self.ibConn.createTriggerableTrailingStop(**trail_stop_params)
+        # add all orders to history
+        self._update_order_history(symbol=symbol,
+                                   orderId=order_id,
+                                   quantity=order_quantity,
+                                   order_type='ENTRY')
 
-            # add all orders to history
-            self._update_order_history(symbol=symbol,
-                                       orderId=orderId,
-                                       quantity=order_quantity,
-                                       order_type='ENTRY')
-
-            # self._update_order_history(symbol=symbol,
-            #                            orderId=order["targetOrderId"],
-            #                            quantity=-order_quantity,
-            #                            order_type='TARGET',
-            #                            parentId=order["entryOrderId"])
-            #
-            # self._update_order_history(symbol=symbol,
-            #                            orderId=order["stopOrderId"],
-            #                            quantity=-order_quantity,
-            #                            order_type='STOP',
-            #                            parentId=order["entryOrderId"])
+        # self._update_order_history(symbol=symbol,
+        #                            orderId=order["targetOrderId"],
+        #                            quantity=-order_quantity,
+        #                            order_type='TARGET',
+        #                            parentId=order["entryOrderId"])
+        #
+        # self._update_order_history(symbol=symbol,
+        #                            orderId=order["stopOrderId"],
+        #                            quantity=-order_quantity,
+        #                            order_type='STOP',
+        #                            parentId=order["entryOrderId"])
 
         # have original params available for FILL event
-        self.orders.recent[orderId] = self._get_locals(locals())
-        self.orders.recent[orderId]['targetOrderId'] = 0
-        self.orders.recent[orderId]['stopOrderId'] = 0
+        self.orders.recent[order_id] = self._get_locals(locals())
+        self.orders.recent[order_id]['targetOrderId'] = 0
+        self.orders.recent[order_id]['stopOrderId'] = 0
 
         if bracket:
             pass
@@ -601,19 +609,20 @@ class Broker():
 
         # append market price at the time of order
         try:
-            self.orders.recent[orderId]['price'] = self.last_price[symbol]
+            self.orders.recent[order_id]['price'] = self.last_price[symbol]
         except Exception as e:
-            self.orders.recent[orderId]['price'] = 0
+            self.orders.recent[order_id]['price'] = 0
 
         # add orderId / ttl to (auto-adds to history)
         expiry = expiry * 1000 if expiry > 0 else 60000  # 1min
-        self._update_pending_order(symbol, orderId, expiry, order_quantity)
+        self._update_pending_order(symbol, order_id, expiry, order_quantity)
         time.sleep(0.1)
+        return order_id
 
     # ---------------------------------------
-    def _cancel_order(self, orderId):
-        if orderId is not None and orderId > 0:
-            self.zerodha.cancel_order(orderId)
+    def _cancel_order(self, order_id):
+        if order_id is not None:
+            return self.zerodha.exit_order(order_id)
 
     # ---------------------------------------
     def modify_order_group(self, symbol, orderId, entry=None,

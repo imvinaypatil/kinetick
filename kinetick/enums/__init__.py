@@ -162,6 +162,18 @@ class order_types:
     STOP_LIMIT = 'STOP LIMIT'
 
 
+class PositionType:
+    MIS = "MIS"  # Intraday with margin
+    CO = "CO"  # Cover Order
+    CNC = "CNC"  # Cash N Carry
+
+
+class SecurityType:
+    OPTION = "OPT"
+    FUTURE = "FUT"
+    STOCK = "STK"
+
+
 class exchanges:
     COINBASE = 'Coinbase'
     BINANCE = 'Binance'
