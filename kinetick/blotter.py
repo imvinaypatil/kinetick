@@ -51,7 +51,7 @@ from kinetick import (
     path,
 )
 from kinetick.utils import utils, asynctools
-from mongoengine import connect as MongoConnect, NotUniqueError, Q
+from mongoengine import connect as mongo_connect, NotUniqueError, Q
 from kinetick.enums import Timeframes, COMMON_TYPES
 from kinetick.lib.brokers import Webull
 from kinetick.models import Tick, OHLC
@@ -708,7 +708,7 @@ class Blotter():
         self._check_unique_blotter()
 
         # connect to mysql
-        self.mongo_connect()
+        self.db_connect()
 
         self.context = zmq.Context(zmq.REP)
         self.socket = self.context.socket(zmq.PUB)
@@ -923,7 +923,7 @@ class Blotter():
                 pass
 
         # connect to mysql
-        self.mongo_connect()
+        self.db_connect()
 
         # --- build query
         table = 'ticks' if resolution[-1] in ("K", "V", "S") else 'bars'
@@ -1169,7 +1169,7 @@ class Blotter():
 
     # -------------------------------------------
 
-    def mongo_connect(self):
+    def db_connect(self):
         # skip db connection
         if self.args['dbskip']:
             return
@@ -1186,7 +1186,7 @@ class Blotter():
             'password': str(self.args['dbpass']) if str(self.args['dbpass']) is not None else None,
             'db': str(self.args['dbname']) if str(self.args['dbname']) else 'kinetick'
         }
-        self.db_connection = MongoConnect(**params)
+        self.db_connection = mongo_connect(**params)
 
     # ===========================================
     # Utility functions --->

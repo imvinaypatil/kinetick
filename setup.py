@@ -44,7 +44,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     platforms=['any'],
-    keywords='kinetick algotrading algo trading zerodha brokers',
+    keywords='kinetick algotrading algo trading zerodha brokers stocks',
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'demo', 'demos', 'examples']),
     install_requires=[
         'python-dateutil>=2.5.3',

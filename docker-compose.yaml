@@ -1,0 +1,47 @@
+version: "3.8"
+services:
+  blotter:
+    image: kinetick:blotter-1.0.0
+    restart: always
+    environment:
+      - zmqport=12345
+      - zmqtopic=qtpy_blotter_topic
+      - symbols=/tmp/cache/symbols.csv
+      - dbhost=""
+      - dbport=27017
+      - dbuser=""
+      - dbpassword=""
+      - dbskip=true
+    ports:
+      - "12345:12345"
+    volumes:
+      - "symdata:/tmp/cache"
+
+  strategy:
+    image: kinetick:strategy-1.0.0
+    restart: always
+    environment:
+      - zmqport=12345
+      - zmqtopic=qtpy_blotter_topic
+      - symbols=/tmp/cache/symbols.csv
+      - zmq_connection_string=tcp://blotter:12345
+      - dbhost=""
+      - dbport=27017
+      - dbuser=""
+      - dbpassword=""
+      - dbname=kinetick
+      - zerodha_user=""
+      - zerodha_password=""
+      - zerodha_pin=""
+      - max_trades=10
+      - initial_capital=10000
+      - initial_margin=1000
+      - risk2reward=1.2
+      - risk_per_trade=100
+    volumes:
+      - "symdata:/tmp/cache"
+
+volumes:
+  symdata:
+  strategy:
+    external: true

@@ -8,7 +8,6 @@ import sys
 
 # make indicators available as pandas extensions
 # import kinetick.lib.indicators as indicators
-
 from . import *
 
 # check min, python version
@@ -27,7 +26,6 @@ path = {
 
 __all__ = [
     'blotter',
-    'strategies',
     'Zerodha',
     'bot',
     'models',

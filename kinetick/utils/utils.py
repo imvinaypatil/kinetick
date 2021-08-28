@@ -167,7 +167,7 @@ def create_contract_tuple(instrument):
 
         if "FUT." not in instrument:
             # symbol stock
-            instrument = (instrument, "STK", "SMART", "INR", "", 0.0, "")
+            instrument = (instrument, "STK", "NSE", "INR", "", 0.0, "")
 
         else:
             raise Exception("Unsupported contract type!")

@@ -52,8 +52,6 @@ class MacdSuperStrategy(Algo):
     ti = {}  # symbol:ta
     _bars = {"~": pd.DataFrame()}
 
-    positions = []  # collection of cash and option trades
-
     def __init__(self, instruments, fast_period=1, slow_period=15, **kwargs):
         super().__init__(instruments, **kwargs)
         self.__MIN_PERIOD__ = Timeframes.timeframe_to_minutes(Timeframes.to_timeframe(self.resolution))
@@ -208,7 +206,6 @@ class MacdSuperStrategy(Algo):
 
     # ---------------------------------------
     def resetHandler(self, update, context):
-        self.positions.clear()
         self.risk_assessor.reset()
         self.log_algo.info("Strategy reset complete.")
         update.message.reply_text("Strategy reset complete.")
@@ -218,17 +215,6 @@ class MacdSuperStrategy(Algo):
         update.message.reply_text(f'count={self.count}')
 
     # ---------------------------------------
-    def start_polling_bars(self):
-        while True:
-            sleep_time = 60 / len(self.instruments)  # ideal 60 sec per symbol
-            sleep_time = sleep_time if sleep_time > 10 else 10  # min gap 10 sec to avoid api block
-            # for instrument in self.instruments:
-            #     try:
-            #         self.sync_bars(instrument)
-            #     except Exception as e:
-            #         logger.warning("Couldn't sync bars with broker", e)
-            #     finally:
-            #         timer.sleep(sleep_time)
 
     def on_start(self):
         """ initialize tick counter """
@@ -236,10 +222,6 @@ class MacdSuperStrategy(Algo):
 
         self.bot.add_command_handler("reset", self.resetHandler, "Reset")
         self.bot.add_command_handler("health", self.health, "Health Check")
-
-        if not self.backtest:
-            t = threading.Thread(target=self.start_polling_bars)
-            t.start()
 
     # ---------------------------------------
     def on_quote(self, instrument):
@@ -332,7 +314,7 @@ class MacdSuperStrategy(Algo):
 
     # ---------------------------------------
     def on_tick(self, instrument):
-        # increase counter and do nothing if nor 10th tick
+        # increase counter and do nothing if nor 100th tick
         self.count[instrument] += 1
 
         if self.count[instrument] % 100 != 0:
@@ -372,14 +354,12 @@ class MacdSuperStrategy(Algo):
 # ===========================================
 if __name__ == "__main__":
     strategy = MacdSuperStrategy(
-        # instruments=["GAIL"],
-        instruments=["UJJIVAN", "GAIL", 'SUNPHARMA', "SBIN", "GLENMARK", "541153"],
+        instruments=["ACC"],
         resolution=Timeframes.MINUTE_1,
         tick_window=50,
         bar_window=__LOOKBACK__,
         preload="1D",
         backtest=True,
-        output="/Users/vinaygoudapatil/Desktop/vinay/github/qtpylib/examples/orders.csv",
         start="2020-07-01 00:15:00",
         risk_assessor=RiskAssessor(max_trades=4, initial_capital=120000, initial_margin=1000,
                                    risk2reward=1.2, risk_per_trade=100),
