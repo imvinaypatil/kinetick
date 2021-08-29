@@ -17,10 +17,6 @@ def load_cli_args():
                         help='Zerodha Password', required=False)
     parser.add_argument('--zerodha_pin', default=os.getenv("zerodha_pin"),
                         help='Zerodha PIN', required=False)
-    parser.add_argument('--webull_user', default=os.getenv("webull_user"),
-                        help='webull user', required=False)
-    parser.add_argument('--webull_password', default=os.getenv("webull_password"),
-                        help='webull password', required=False)
     parser.add_argument('--stocks_list', default=os.getenv("stocks_list"),
                         help='webull stocks watchlist name', required=False)
     parser.add_argument('--resolution', default=os.getenv("resolution") or Timeframes.MINUTE_5,
