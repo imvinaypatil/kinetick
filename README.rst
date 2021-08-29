@@ -60,7 +60,7 @@ Features
 - Includes many common indicators that you can seamlessly use in your algorithm.
 - **Market data events use asynchronous, non-blocking architecture**.
 - Realtime alerts and order confirmation delivered to your mobile via Telegram bot (requires a `Telegram bot <https://t.me/botfather>`_ token).
-- Full integration with `TA-Lib <http://ta-lib.org>`_ via dedicated module (`see example <strategies/macd_super_strategy.py>`_).
+- Full integration with `TA-Lib <https://pypi.org/project/TA-Lib/>`_ via dedicated module (`see example <strategies/macd_super_strategy.py>`_).
 - Ability to import any Python library (such as `scikit-learn <http://scikit-learn.org>`_ or `TensorFlow <https://www.tensorflow.org>`_) to use them in your algorithms.
 - Live charts powered by TradingView
 - **RiskAssessor** to manage and limit the risk even if strategy goes unexpected
