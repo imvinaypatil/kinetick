@@ -1,9 +1,10 @@
 `>_• <./resources/kinetick512.png>`_ Kinetick Trade Bot
-=====================================
+=======================================================
 .. image:: .resources/kinetick-beta128.png
     :height: 128
     :width: 128
     :alt: **>_•**
+
 \
 
 .. image:: https://img.shields.io/github/checks-status/imvinaypatil/kinetick/main
@@ -33,7 +34,7 @@ Leave the heavy lifting to kinetick so that you can focus on building strategies
 `Changelog » <./CHANGELOG.rst>`_
 
 📱 Screenshots
-======
+==============
 
 .. |screen1| image:: .resources/screenshot1.jpeg
    :scale: 100%
@@ -211,14 +212,14 @@ While the Strategy running in the background:
 - ``/login <password>`` - password can be found in the strategy console.
 
 commands
-----
+--------
 
 - ``/report``
 - ``/help``
 
 
 Configuration
-----
+-------------
 Can be specified either as env variable or cmdline arg
 
 .. list-table::
@@ -331,7 +332,7 @@ Can be specified either as env variable or cmdline arg
 
 
 Backtesting
------
+-----------
 
 .. code:: bash
 
@@ -344,12 +345,13 @@ Backtesting
 
 
 🙏 Credits
------
+----------
+
 Thanks to @ran aroussi for all his initial work with Qtpylib.
 Most of work here is derived from his library
 
-Legal Stuff
-----
+Disclaimer
+----------
 
 Kinetick is licensed under the **Apache License, Version 2.0**. A copy of which is included in LICENSE.txt.
 

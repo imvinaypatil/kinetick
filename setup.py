@@ -15,14 +15,14 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-# with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-#     long_description = f.read() TODO
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name='kinetick',
     version='1.0.0',
     description='Simplifying Trading',
-    # long_description=long_description,
+    long_description=long_description,
     url='https://github.com/vin8tech/kinetick',
     author='vin8tech',
     author_email='',
@@ -52,7 +52,8 @@ setup(
         'pytz>=2016.6.1', 'requests>=2.10.0', 'pyzmq>=15.2.1',
         'mongoengine>=0.20.0',
         'python-telegram-bot>=12.7', 'paho-mqtt>=1.5.0',
-        'TA-Lib>=0.4.18', 'webull @ git+git://github.com/imvinaypatil/webull.git@slave'
+        'TA-Lib>=0.4.18',
+        'webull @ git+git://github.com/imvinaypatil/webull.git@slave'
     ],
     entry_points={
         'console_scripts': [
