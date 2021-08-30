@@ -39,4 +39,4 @@ ENV resolution=1m
 ENV LOGLEVEL=INFO
 ENV PYTHONUNBUFFERED=1
 
-CMD [ "python3", "./kinetick/factory/strategy.py" ]
+CMD [ "python", "-m", "kinetick.factory.strategy" ]

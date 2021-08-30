@@ -108,7 +108,7 @@ class Algo(Broker):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, instruments, risk_assessor: RiskAssessor = None, resolution="1T",
+    def __init__(self, instruments, risk_assessor: RiskAssessor = None, resolution="1m",
                  tick_window=1, bar_window=100, timezone="UTC", preload=None,
                  continuous=True, blotter=None, sms=None, log=None,
                  backtest=False, start=None, end=None, data=None, output=None,
@@ -164,7 +164,7 @@ class Algo(Broker):
         self.blotter_name = self.args["blotter"]
         self.record_output = self.args["output"]
 
-        self.risk_assessor = risk_assessor if not None else RiskAssessor()
+        self.risk_assessor = risk_assessor if not None else RiskAssessor(**self.args)
 
         # ---------------------------------------
         # sanity checks for backtesting mode
@@ -196,7 +196,10 @@ class Algo(Broker):
 
         # -----------------------------------
         # initiate broker/order manager
-        super().__init__(instruments, **kwargs)
+        super().__init__(instruments,
+                         zerodha_user=self.args['zerodha_user'],
+                         zerodha_password=self.args['zerodha_password'],
+                         zerodha_pin=self.args['zerodha_pin'])
 
         # -----------------------------------
         # signal collector
@@ -276,12 +279,30 @@ class Algo(Broker):
         parser.add_argument('--continuous', default=self.args["continuous"],
                             help='Use continuous Futures contracts (flag)',
                             action='store_true')
+        parser.add_argument('--zerodha_user', default=os.getenv("zerodha_user"),
+                            help='Zerodha Username', required=False)
+        parser.add_argument('--zerodha_password', default=os.getenv("zerodha_password"),
+                            help='Zerodha Password', required=False)
+        parser.add_argument('--zerodha_pin', default=os.getenv("zerodha_pin"),
+                            help='Zerodha PIN', required=False)
+        parser.add_argument('--resolution', default=os.getenv("resolution") or Timeframes.MINUTE_1,
+                            help='Bar interval in terms of resolution (default=1m). '
+                                 'ex. 1m, 3m, 5m, 15m, 30m, 1h, 2h, 3h, 4h, 6h, 8h, 1D',
+                            required=False)
+        parser.add_argument('--max_trades', default=os.getenv("max_trades") or 1, type=int,
+                            help='Max Active Concurrent Trades (default=1). ex. 4', required=False)
+        parser.add_argument('--initial_capital', default=os.getenv("initial_capital") or 10000, type=float,
+                            help='Initial Capital (default=10000). ex. 1200000', required=False)
+        parser.add_argument('--initial_margin', default=os.getenv("initial_margin") or 1000, type=float,
+                            help='Initial Margin (default=1000). ex. 10000', required=False)
+        parser.add_argument('--risk2reward', default=os.getenv("risk2reward") or 1, type=float,
+                            help='Risk to Reward (default=1). ex. 1.2', required=False)
+        parser.add_argument('--risk_per_trade', default=os.getenv("risk_per_trade") or 100, type=float,
+                            help='Risk per Trade (default=100), ex. 100', required=False)
 
-        # only return non-default cmd line args
-        # (meaning only those actually given)
         cmd_args, _ = parser.parse_known_args()
         args = {arg: val for arg, val in vars(
-            cmd_args).items() if val != parser.get_default(arg)}
+            cmd_args).items()}
         return args
 
     # ---------------------------------------
@@ -613,7 +634,8 @@ class Algo(Broker):
             if best_price is True and limit_price > 0:
                 instrument = self.get_instrument(symbol)
                 order_book = instrument.get_orderbook()
-                running_price = float(order_book['bid'][0]) if txn_type.upper() != "BUY" else float(order_book['ask'][0])
+                running_price = float(order_book['bid'][0]) if txn_type.upper() != "BUY" else float(
+                    order_book['ask'][0])
                 running_size = float(order_book['bidsize'][0]) if txn_type.upper() != "BUY" else float(
                     order_book['asksize'][0])
 
@@ -647,7 +669,8 @@ class Algo(Broker):
             order_id : int
                 Order ID
         """
-        return self._cancel_order(order_id)
+        if not self.backtest:
+            return self._cancel_order(order_id)
 
     # ---------------------------------------
     def record(self, *args, **kwargs):

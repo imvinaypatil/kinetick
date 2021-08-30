@@ -76,7 +76,7 @@ Install using ``pip``:
 
 .. code:: bash
 
-    $ pip install .
+    $ pip install kinetick
 
 
 Quickstart
@@ -96,17 +96,29 @@ There are 5 main components in Kinetick:
 
 To get started, you need to first create a Blotter script:
 
-Run the Blotter from the command line:
+.. code:: python
+
+    # blotter.py
+    from kinetick.blotter import Blotter
+
+    class MainBlotter(Blotter):
+        pass # we just need the name
+
+    if __name__ == "__main__":
+        blotter = MainBlotter()
+        blotter.run()
+
+Then run the Blotter from the command line:
 
 .. code:: bash
 
-    $ python kinetick/factory/blotter.py
+    $ python -m blotter
 
 If your strategy needs order book / market depth data, add the ``--orderbook`` flag to the command:
 
 .. code:: bash
 
-    $ python kinetick/factory/blotter.py --orderbook
+    $ python -m blotter --orderbook
 
 
 2. Write your Algorithm
@@ -190,13 +202,11 @@ While the Blotter running in the background, write and execute your algorithm:
         strategy.run()
 
 
-To run your algo in a **live** environment,
-update the strategies/__init__.py strategy() method to build and return your strategy instance.
-And then from the command line, type:
+To run your algo in a **live** environment, from the command line, type:
 
 .. code:: bash
 
-    $ python kinetick/factory/strategy.py --logpath ~/orders
+    $ python -m strategy --logpath ~/orders
 
 
 The resulting trades be saved in ``~/orders/STRATEGY_YYYYMMDD.csv`` for later analysis.
@@ -336,12 +346,12 @@ Backtesting
 
 .. code:: bash
 
-    $ python --start "2021-03-06 00:15:00" --end "2021-03-10 00:15:00" --SYM NSEI --backtest
+    $ python -m strategy --start "2021-03-06 00:15:00" --end "2021-03-10 00:15:00" --backtest
 
 
 .. note::
 
-    To get started checkout the simplest BuyLowSellHigh strategy in ``strategies/`` directory.
+    To get started checkout the patented BuyLowSellHigh strategy in ``strategies/`` directory.
 
 
 🙏 Credits

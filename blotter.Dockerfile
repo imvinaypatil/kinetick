@@ -36,5 +36,5 @@ ENV dbname=qtpy
 ENV dbskip=false
 ENV LOGLEVEL=INFO
 
-CMD [ "python", "./kinetick/factory/blotter.py" ]
+CMD [ "python", "-m", "kinetick.factory.blotter" ]
 

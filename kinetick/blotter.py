@@ -296,7 +296,8 @@ class Blotter():
                             help='MySQL server username', required=False)
         parser.add_argument('--dbpass', default=os.getenv("dbpass") or self.args['dbpass'],
                             help='MySQL server password', required=False)
-        parser.add_argument('--dbskip', default=to_boolean(os.getenv("dbskip")) or self.args['dbskip'],
+        dbskip = to_boolean(os.getenv("dbskip")) if os.getenv("dbskip") is not None else self.args['dbskip']
+        parser.add_argument('--dbskip', default=dbskip,
                             required=False, help='Skip DB logging (flag)',
                             action='store_true')
 
@@ -693,9 +694,8 @@ class Blotter():
             if isinstance(data, Tick):
                 return
             data.save()
-        except Exception:
-            traceback.print_exc()
-            self.log_blotter.error("Error inserting data into db", data)
+        except Exception as e:
+            self.log_blotter.error("Error inserting data into db", e)
 
     # -------------------------------------------
     def run(self):

@@ -20,10 +20,10 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='kinetick',
-    version='1.0.0',
+    version='1.0.1',
     description='Simplifying Trading',
     long_description=long_description,
-    url='https://github.com/vin8tech/kinetick',
+    url='https://github.com/imvinaypatil/kinetick',
     author='vin8tech',
     author_email='',
     license='LGPL',

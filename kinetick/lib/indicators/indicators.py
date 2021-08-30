@@ -31,9 +31,6 @@ from pandas.core.base import PandasObject
 # check min, python version
 from .supertrend import SuperTrend
 
-if sys.version_info < (3, 4):
-    raise SystemError("QTPyLib requires Python version >= 3.4")
-
 # =============================================
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 

@@ -197,8 +197,6 @@ class MacdSuperStrategy(Algo):
             self.count[instrument] = 0
             if instrument not in self.ti.keys():
                 self.ti[instrument] = {'fast_ta': self.ta_df.copy(), 'slow_ta': self.ta_df.copy()}
-                if not self.backtest:
-                    self.sync_bars(instrument)
 
     # ---------------------------------------
     def add_instrument(self, symbol):
