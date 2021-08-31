@@ -164,7 +164,7 @@ class Algo(Broker):
         self.blotter_name = self.args["blotter"]
         self.record_output = self.args["output"]
 
-        self.risk_assessor = risk_assessor if not None else RiskAssessor(**self.args)
+        self.risk_assessor = risk_assessor if risk_assessor is not None else RiskAssessor(**self.args)
 
         # ---------------------------------------
         # sanity checks for backtesting mode

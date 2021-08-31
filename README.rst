@@ -239,11 +239,6 @@ Can be specified either as env variable or cmdline arg
      - example
      - default
      - note
-   * - ``SYM``
-     -
-     - SYM=SBIN;ACC
-     -
-     - Additionally, instruments can be provided externally by csv
    * - ``symbols``
      -
      -  symbols=./symbols.csv

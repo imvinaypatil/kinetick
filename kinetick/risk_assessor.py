@@ -26,7 +26,8 @@ class Borg:
 
 
 class RiskAssessor(Borg):
-    def __init__(self, initial_capital=1000, max_trades=1, initial_margin=100, risk2reward=1.0, risk_per_trade=100):
+    def __init__(self, initial_capital=1000, max_trades=1, initial_margin=100,
+                 risk2reward=1.0, risk_per_trade=100, **kwargs):
         Borg.__init__(self)
 
         self.capital = initial_capital
