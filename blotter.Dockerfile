@@ -1,14 +1,8 @@
-FROM python:3
-
-#RUN apk update
-#RUN apk add musl-dev wget git build-base libffi-dev openssl-dev python3-dev
-
-# Numpy
-#RUN pip install cython
-#RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
+FROM python:3.7
 
 WORKDIR /app
-COPY . /app
+ADD ./requirements.txt /app/requirements.txt
+ADD ./constraints.txt /app/constraints.txt
 
 # TA-Lib
 RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
@@ -18,11 +12,10 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   make && \
   make install
 
-RUN pip install . && \
+RUN pip install -r requirements.txt -c constraints.txt --no-cache && \
     pip install git+https://github.com/imvinaypatil/webull.git@slave -U
 
-RUN cd ta-lib/ && make uninstall
-#RUN apk del musl-dev wget git build-base libffi-dev openssl-dev python3-dev
+ADD . /app
 
 ENV PYTHONUNBUFFERED=1
 ENV dbport=27017
@@ -30,9 +23,9 @@ ENV orderbook=true
 ENV threads=2
 ENV dbhost='127.0.0.1'
 ENV dbport=27017
-ENV dbuser=qtpy
-ENV dbpassword=qtpy
-ENV dbname=qtpy
+ENV dbuser=kinetick
+ENV dbpassword=kinetick
+ENV dbname=kinetick
 ENV dbskip=false
 ENV LOGLEVEL=INFO
 

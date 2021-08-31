@@ -1,13 +1,9 @@
-FROM python:3
+FROM python:3.7
 
-#RUN apk update
-#RUN apk add musl-dev wget git build-base libffi-dev openssl-dev python3-dev
+WORKDIR /app
+ADD ./requirements.txt /app/requirements.txt
+ADD ./constraints.txt /app/constraints.txt
 
-# Numpy
-#RUN pip install cython
-#RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
-
-# TA-Lib
 RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   tar -xvzf ta-lib-0.4.0-src.tar.gz && \
   cd ta-lib/ && \
@@ -15,13 +11,11 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   make && \
   make install
 
-WORKDIR /app
-COPY . /app
 
-RUN pip3 install . && \
-    pip3 install git+https://github.com/imvinaypatil/webull.git@slave -U
+RUN pip install -r requirements.txt -c constraints.txt && \
+    pip install git+https://github.com/imvinaypatil/webull.git@slave -U
 
-#RUN apk del musl-dev wget git build-base libffi-dev openssl-dev python3-dev
+ADD . /app
 
 ENV dbport=27017
 ENV orderbook=true
