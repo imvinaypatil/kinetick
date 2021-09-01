@@ -36,6 +36,7 @@ import numpy as np
 import pandas as pd
 from mongoengine import connect
 
+from build.lib.kinetick.models import Contract
 from kinetick.blotter import load_blotter_args, Blotter
 from kinetick.enums import SecurityType, PositionType
 from kinetick.instrument import Instrument
@@ -113,7 +114,7 @@ class Broker():
         instrument_tuples_dict = {}
         for instrument in instruments:
             try:
-                if isinstance(instrument, tuple):
+                if isinstance(instrument, Contract):
                     instrument = self.broker.contract_to_tuple(instrument)
                 else:
                     instrument = utils.create_contract_tuple(instrument)
@@ -121,7 +122,7 @@ class Broker():
                 instrument_tuples_dict[contractString] = instrument
                 self.broker.createContract(instrument)
             except Exception as e:
-                self.log_broker.error(e)
+                self.log_broker.error("Error creating contract", e)
 
         self.instruments = instrument_tuples_dict
         self.symbols = list(self.instruments.keys())

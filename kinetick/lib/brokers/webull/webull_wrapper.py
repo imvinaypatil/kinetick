@@ -246,9 +246,9 @@ class Webull:
     # -----------------------------------------
     @staticmethod
     def contract_to_tuple(contract):
-        return (contract.m_symbol, contract.m_secType,
-                contract.m_exchange, contract.m_currency, contract.m_expiry,
-                contract.m_strike, contract.m_right)
+        return (contract.symbol, contract.sec_type,
+                contract.exchange, contract.currency, contract.expiry,
+                contract.strike, contract.right)
 
     # -----------------------------------------
     def registerContract(self, contract):
@@ -1177,19 +1177,19 @@ class Webull:
         if exchange is not None:
             exchange = exchange.upper()
         newContract = Contract()
-        newContract.m_symbol = contractTuple[0]
-        newContract.m_secType = contractTuple[1]
-        newContract.m_exchange = exchange
-        newContract.m_currency = contractTuple[3]
-        newContract.m_expiry = contractTuple[4]
-        newContract.m_strike = contractTuple[5]
-        newContract.m_right = contractTuple[6]
+        newContract.symbol = contractTuple[0]
+        newContract.sec_type = contractTuple[1]
+        newContract.exchange = exchange
+        newContract.currency = contractTuple[3]
+        newContract.expiry = contractTuple[4]
+        newContract.strike = contractTuple[5]
+        newContract.right = contractTuple[6]
 
         if len(contractTuple) == 8:
             newContract.m_multiplier = contractTuple[7]
 
         # include expired (needed for historical data)
-        newContract.m_includeExpired = (newContract.m_secType in ["FUT", "OPT", "FOP"])
+        newContract.m_includeExpired = (newContract.secType in ["FUT", "OPT", "FOP"])
 
         if "comboLegs" in kwargs:
             newContract.m_comboLegs = kwargs["comboLegs"]
@@ -1688,7 +1688,7 @@ class Webull:
         strikes = []
         contracts = self.contractDetails(contract_identifier)["contracts"]
 
-        if contracts[0].m_secType not in ("FOP", "OPT"):
+        if contracts[0].sec_type not in ("FOP", "OPT"):
             return []
 
         # collect expirations
@@ -1715,7 +1715,7 @@ class Webull:
         expirations = []
         contracts = self.contractDetails(contract_identifier)["contracts"]
 
-        if contracts[0].m_secType not in ("FUT", "FOP", "OPT"):
+        if contracts[0].sec_type not in ("FUT", "FOP", "OPT"):
             return []
 
         # collect expirations
