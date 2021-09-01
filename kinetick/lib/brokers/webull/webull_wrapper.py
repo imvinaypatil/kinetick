@@ -255,7 +255,7 @@ class Webull:
         """ used for when callback receives a contract
         that isn't found in local database """
 
-        if contract.m_exchange == "":
+        if contract.exchange == "":
             return
 
         """
@@ -723,7 +723,7 @@ class Webull:
         """
 
         df2use = self.marketData
-        if self.contracts[msg._tickerId].m_secType in ("OPT", "FOP"):
+        if self.contracts[msg._tickerId].sec_type in ("OPT", "FOP"):
             df2use = self.optionsData
 
         # create tick holder for ticker
@@ -755,7 +755,7 @@ class Webull:
 
         df2use = self.marketData
         # canAutoExecute = msg.canAutoExecute == 1
-        if self.contracts[tickerId].m_secType in ("OPT", "FOP"):
+        if self.contracts[tickerId].sec_type in ("OPT", "FOP"):
             df2use = self.optionsData
         #     canAutoExecute = True
 
@@ -807,7 +807,7 @@ class Webull:
         data = msg['data']
 
         df2use = self.marketData
-        if self.contracts[tickerId].m_secType in ("OPT", "FOP"):
+        if self.contracts[tickerId].sec_type in ("OPT", "FOP"):
             df2use = self.optionsData
 
         # create tick holder for ticker
@@ -866,7 +866,7 @@ class Webull:
         data = msg['data']
 
         df2use = self.marketData
-        if self.contracts[tickerId].m_secType in ("OPT", "FOP"):
+        if self.contracts[tickerId].sec_type in ("OPT", "FOP"):
             df2use = self.optionsData
 
         # create tick holder for ticker
@@ -1135,10 +1135,10 @@ class Webull:
             'm_marketName': '', 'm_minTick': 0.05, 'm_orderTypes': '', 'm_priceMagnifier': 0,
             'm_subcategory': None, 'm_timeZoneId': '', 'm_tradingHours': '', 'm_underConId': 0,
             'm_validExchanges': 'NSE', 'contracts': [Contract()], 'm_summary': {
-                'm_conId': 0, 'm_currency': 'USD', 'm_exchange': 'NSE', 'm_expiry': '',
+                'm_conId': 0, 'currency': 'USD', 'exchange': 'NSE', 'expiry': '',
                 'm_includeExpired': False, 'm_localSymbol': '', 'm_multiplier': '',
-                'm_primaryExch': None, 'm_right': None, 'm_secType': '',
-                'm_strike': 0.0, 'm_symbol': '', 'm_tradingClass': '',
+                'm_primaryExch': None, 'right': None, 'sec_type': '',
+                'strike': 0.0, 'symbol': '', 'm_tradingClass': '',
             }
         }
 
@@ -1147,11 +1147,11 @@ class Webull:
     # -----------------------------------------
     def isMultiContract(self, contract):
         """ tells if is this contract has sub-contract with expiries/strikes/sides """
-        if contract.m_secType == "FUT" and contract.m_expiry == "":
+        if contract.sec_type == "FUT" and contract.expiry == "":
             return True
 
-        if contract.m_secType in ["OPT", "FOP"] and \
-                (contract.m_expiry == "" or contract.m_strike == "" or contract.m_right == ""):
+        if contract.sec_type in ["OPT", "FOP"] and \
+                (contract.expiry == "" or contract.strike == "" or contract.right == ""):
             return True
 
         tickerId = self.tickerId(contract)
@@ -1189,7 +1189,7 @@ class Webull:
             newContract.m_multiplier = contractTuple[7]
 
         # include expired (needed for historical data)
-        newContract.m_includeExpired = (newContract.secType in ["FUT", "OPT", "FOP"])
+        newContract.m_includeExpired = (newContract.sec_type in ["FUT", "OPT", "FOP"])
 
         if "comboLegs" in kwargs:
             newContract.m_comboLegs = kwargs["comboLegs"]
@@ -1436,7 +1436,7 @@ class Webull:
 
             df2use = self.marketQuoteData
 
-            if self.contracts[tickerId].m_secType in ("OPT", "FOP"):
+            if self.contracts[tickerId].sec_type in ("OPT", "FOP"):
                 df2use = self.optionsData
 
             # create tick holder for ticker
@@ -1667,7 +1667,7 @@ class Webull:
         leg.m_conId = conId
         leg.m_ratio = abs(ratio)
         leg.m_action = action
-        leg.m_exchange = contract.m_exchange if exchange is None else exchange
+        leg.m_exchange = contract.exchange if exchange is None else exchange
         leg.m_openClose = 0
         leg.m_shortSaleSlot = 0
         leg.m_designatedLocation = ""
@@ -1693,7 +1693,7 @@ class Webull:
 
         # collect expirations
         for contract in contracts:
-            strikes.append(contract.m_strike)
+            strikes.append(contract.strike)
 
         # convert to floats
         strikes = list(map(float, strikes))
@@ -1720,7 +1720,7 @@ class Webull:
 
         # collect expirations
         for contract in contracts:
-            expirations.append(contract.m_expiry)
+            expirations.append(contract.expiry)
 
         # convert to ints
         expirations = list(map(int, expirations))
