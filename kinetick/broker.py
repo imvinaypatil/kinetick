@@ -36,7 +36,7 @@ import numpy as np
 import pandas as pd
 from mongoengine import connect
 
-from build.lib.kinetick.models import Contract
+from kinetick.models import Contract
 from kinetick.blotter import load_blotter_args, Blotter
 from kinetick.enums import SecurityType, PositionType
 from kinetick.instrument import Instrument
