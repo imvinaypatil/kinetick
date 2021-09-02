@@ -46,6 +46,7 @@ class RiskAssessor(Borg):
             raise Exception("Capital is lower than available_margin")
 
         Bot().add_command_handler("report", self.availableMarginHandler, "Get report")
+        Bot().add_command_handler("reset-rms", self.reset, "Reset RMS values")
 
     def availableMarginHandler(self, update, context):
         msg = "```\n" \
@@ -67,6 +68,9 @@ class RiskAssessor(Borg):
         self.capital = self.initial_capital
         self.available_margin = self.initial_margin
         self.active_positions.clear()
+        self.pnl = 0
+        self.win_trades = 0
+        self.loss_trades = 0
 
     def _should_trade(self, entry_price, stop_loss, quantity=None):
         spread = abs(entry_price - stop_loss)
@@ -139,8 +143,10 @@ class RiskAssessor(Borg):
 
         pnl = position.pnl()
 
-        self.available_margin = round(self.available_margin + pnl, 2)
-        self.capital = self.capital + pnl
+        self.available_margin = round(self.available_margin + pnl, 2) if pnl > 0 else self.available_margin
+        # if pnl is -ve then it would already be subtracted when entering the trade.
+        self.capital = self.capital + (position.entry_price * position.quantity) + pnl
+        # reclaim the capital deployed in trade
         self.pnl += pnl
         if pnl > 0:
             self.win_trades += 1

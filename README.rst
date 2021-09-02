@@ -224,8 +224,10 @@ While the Strategy running in the background:
 commands
 --------
 
-- ``/report``
-- ``/help``
+- ``/report`` - get overview about trades
+- ``/help`` - get help
+- ``/reset-rms`` - resets RiskAssessor parameters to its initial values.
+
 
 
 Configuration
