@@ -1,4 +1,4 @@
-from strategies import strategy
+from kinetick.strategies import strategy
 
 
 # ===========================================

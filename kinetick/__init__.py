@@ -39,5 +39,7 @@ __all__ = [
     'Webull',
     'utils',
     'indicators',
+    'factory'
+    'strategies'
     'path'
 ]
