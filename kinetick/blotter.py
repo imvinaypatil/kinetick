@@ -31,7 +31,6 @@ import tempfile
 import time
 import glob
 import subprocess
-import traceback
 
 from datetime import datetime
 from abc import ABCMeta
@@ -410,7 +409,7 @@ class Blotter():
 
         # for instruments that DOESN'T receive RTVOLUME events (exclude options)
         elif symbol not in self.rtvolume and \
-                self.connection.contracts[tickerId].m_secType not in ("OPT", "FOP"):
+                self.connection.contracts[tickerId].sec_type not in ("OPT", "FOP"):
 
             tick = self.connection.marketData[tickerId]
             # print(tick)
@@ -455,14 +454,14 @@ class Blotter():
         try:
             symbol = self.connection.tickerSymbol(tickerId)
 
-            if self.connection.contracts[tickerId].m_secType in ("OPT", "FOP"):
+            if self.connection.contracts[tickerId].sec_type in ("OPT", "FOP"):
                 quote = self.connection.optionsData[tickerId].to_dict(orient='records')[
                     0]
-                quote['type'] = self.connection.contracts[tickerId].m_right
+                quote['type'] = self.connection.contracts[tickerId].right
                 quote['strike'] = utils.to_decimal(
-                    self.connection.contracts[tickerId].m_strike)
-                quote["symbol_group"] = self.connection.contracts[tickerId].m_symbol + \
-                                        '_' + self.connection.contracts[tickerId].m_secType
+                    self.connection.contracts[tickerId].strike)
+                quote["symbol_group"] = self.connection.contracts[tickerId].symbol + \
+                                        '_' + self.connection.contracts[tickerId].sec_type
                 quote = utils.mark_options_values(quote)
             else:
                 quote = self.connection.marketQuoteData[tickerId].to_dict(orient='records')[0]
@@ -513,11 +512,11 @@ class Blotter():
             if tick[key] == 0:
                 return
 
-        tick['type'] = self.connection.contracts[tickerId].m_right
+        tick['type'] = self.connection.contracts[tickerId].right
         tick['strike'] = utils.to_decimal(
-            self.connection.contracts[tickerId].m_strike)
-        tick["symbol_group"] = self.connection.contracts[tickerId].m_symbol + \
-                               '_' + self.connection.contracts[tickerId].m_secType
+            self.connection.contracts[tickerId].strike)
+        tick["symbol_group"] = self.connection.contracts[tickerId].symbol + \
+                               '_' + self.connection.contracts[tickerId].sec_type
         tick['volume'] = int(tick['volume'])
         tick['bid'] = utils.to_decimal(tick['bid'])
         tick['bidsize'] = int(tick['bidsize'])
@@ -695,7 +694,7 @@ class Blotter():
                 return
             data.save()
         except Exception as e:
-            self.log_blotter.error("Error inserting data into db", e)
+            self.log_blotter.error("Error inserting data into db %s", e)
 
     # -------------------------------------------
     def run(self):
@@ -1165,7 +1164,7 @@ class Blotter():
             db.to_csv(self.args['symbols'], header=True, index=False)
             chmod(self.args['symbols'])
         except Exception as e:
-            self.log_blotter.info("Skipping symbols file since it couldn't be found in the system", e)
+            self.log_blotter.error("Skipping symbols file since it couldn't be found in the system", e)
 
     # -------------------------------------------
 
