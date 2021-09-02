@@ -46,7 +46,7 @@ class RiskAssessor(Borg):
             raise Exception("Capital is lower than available_margin")
 
         Bot().add_command_handler("report", self.availableMarginHandler, "Get report")
-        Bot().add_command_handler("reset-rms", self.reset, "Reset RMS values")
+        Bot().add_command_handler("resetrms", self.reset, "Reset RMS values")
 
     def availableMarginHandler(self, update, context):
         msg = "```\n" \
