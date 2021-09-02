@@ -11,9 +11,8 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   make && \
   make install
 
-
 RUN python -m pip install --upgrade pip &&  \
-    pip install -r requirements.txt && \
+    pip install -r requirements.txt -c constraints.txt --no-cache && \
     pip install git+https://github.com/imvinaypatil/webull.git@slave -U
 
 ADD . /app

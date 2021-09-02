@@ -13,7 +13,7 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   make install
 
 RUN python -m pip install --upgrade pip && \
-    pip install -r requirements.txt --no-cache && \
+    pip install -r requirements.txt -c constraints.txt --no-cache && \
     pip install git+https://github.com/imvinaypatil/webull.git@slave -U
 
 ADD . /app
@@ -31,4 +31,3 @@ ENV dbskip=false
 ENV LOGLEVEL=INFO
 
 CMD [ "python", "-m", "kinetick.factory.blotter" ]
-

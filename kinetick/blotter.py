@@ -31,7 +31,6 @@ import tempfile
 import time
 import glob
 import subprocess
-import traceback
 
 from datetime import datetime
 from abc import ABCMeta
@@ -695,7 +694,7 @@ class Blotter():
                 return
             data.save()
         except Exception as e:
-            self.log_blotter.error("Error inserting data into db", e)
+            self.log_blotter.error("Error inserting data into db %s", e)
 
     # -------------------------------------------
     def run(self):

@@ -335,9 +335,24 @@ Can be specified either as env variable or cmdline arg
      - 1
      - Min Bar interval
 
+Docker Instructions
+===================
+
+1. Build blotter
+
+    ``$ docker build -t kinetick:blotter -f blotter.Dockerfile .``
+
+2. Build strategy
+
+    ``$ docker build -t kinetick:strategy -f strategy.Dockerfile .``
+
+3. Run with docker-compose
+
+    ``$ docker compose up``
+
 
 Backtesting
------------
+===========
 
 .. code:: bash
 
@@ -350,13 +365,13 @@ Backtesting
 
 
 🙏 Credits
-----------
+==========
 
 Thanks to @ran aroussi for all his initial work with Qtpylib.
 Most of work here is derived from his library
 
 Disclaimer
-----------
+==========
 
 Kinetick is licensed under the **Apache License, Version 2.0**. A copy of which is included in LICENSE.txt.
 
