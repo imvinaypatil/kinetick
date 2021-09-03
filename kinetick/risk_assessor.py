@@ -128,7 +128,7 @@ class RiskAssessor(Borg):
         should_trade, spread, quantity, reason = self._should_trade(position.entry_price, position.stop,
                                                                     quantity=position.quantity)
         if not should_trade:
-            raise Exception(f'Trade can not be made void risk margins {reason}')
+            raise Exception(f'Trade can not be made voids rms parameters {reason}')
         self.active_positions.append(position)
         self.available_margin = self.available_margin - spread * quantity
         self.capital = self.capital - (position.entry_price * quantity)

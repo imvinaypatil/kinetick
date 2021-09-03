@@ -232,11 +232,12 @@ class Instrument(str):
 
     # ---------------------------------------
     def close_position(self, position, **kwargs):
+        if self._position is not None and position is self._position:
+            self._position = None
         if not position.active:
             raise Exception("Position can't be closed because the status is inactive")
         position.close_position()
         self.parent.risk_assessor.exit_position(position)
-        self._position = None
 
         txn_type = "SELL" if position.direction == "LONG" else "BUY"  # EXIT
         if self.parent.backtest:
