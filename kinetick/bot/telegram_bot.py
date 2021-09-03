@@ -64,8 +64,8 @@ class TelegramBot(DumbBot):
             except Exception as e:
                 logger.error("Failed to launch bot", e)
         if __CHAT_ID__ is not None:
-            self._chat_ids.add(__CHAT_ID__)
-            self._verified_chat_id = __CHAT_ID__
+            self._chat_ids.add(int(__CHAT_ID__))
+            self._verified_chat_id = int(__CHAT_ID__)
 
     def start(self, *args, **kwargs):
         pass
