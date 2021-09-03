@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv('LOGLEVEL') or logging.INFO)
 
 __TOKEN__ = os.getenv("BOT_TOKEN")
+__CHAT_ID__ = os.getenv("CHAT_ID")
 
 
 class TelegramBot(DumbBot):
@@ -62,6 +63,9 @@ class TelegramBot(DumbBot):
                 print(f"Login Pass: {self._password}")
             except Exception as e:
                 logger.error("Failed to launch bot", e)
+        if __CHAT_ID__ is not None:
+            self._chat_ids.add(__CHAT_ID__)
+            self._verified_chat_id = __CHAT_ID__
 
     def start(self, *args, **kwargs):
         pass
@@ -145,7 +149,7 @@ class TelegramBot(DumbBot):
                     callback(market=market, cancel=cancel)
                     query.edit_message_text(text="{} order request sent".format(cmd))
                 except Exception as e:
-                    logger.error('Error executing command', e)
+                    logger.error('Error executing command %s', e)
                     query.edit_message_text(text="Error sending order request. Reason: {}".format(e))
         else:
             query.edit_message_text(text="Can not execute order.")
