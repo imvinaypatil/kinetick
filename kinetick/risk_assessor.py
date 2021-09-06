@@ -64,13 +64,15 @@ class RiskAssessor(Borg):
     def get_default_instance():
         return RiskAssessor(initial_capital=6000, max_trades=2, initial_margin=6000, risk2reward=1.3)
 
-    def reset(self):
+    def reset(self, update=None, **kwargs):
         self.capital = self.initial_capital
         self.available_margin = self.initial_margin
         self.active_positions.clear()
         self.pnl = 0
         self.win_trades = 0
         self.loss_trades = 0
+        if update is not None:
+            update.message.reply_text("RMS has been reset.")
 
     def _should_trade(self, entry_price, stop_loss, quantity=None):
         spread = abs(entry_price - stop_loss)
