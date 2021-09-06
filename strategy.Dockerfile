@@ -1,8 +1,10 @@
-FROM python:3.7
+FROM python:3.7-slim
 
 WORKDIR /app
 ADD ./requirements.txt /app/requirements.txt
 ADD ./constraints.txt /app/constraints.txt
+
+RUN apt-get update && apt-get install -y wget && apt-get install -y build-essential && apt-get install -y git
 
 RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   tar -xvzf ta-lib-0.4.0-src.tar.gz && \
@@ -12,8 +14,10 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   make install
 
 RUN python -m pip install --upgrade pip &&  \
-    pip install -r requirements.txt -c constraints.txt --no-cache && \
+    pip install -r requirements.txt -c constraints.txt --no-cache-dir && \
     pip install git+https://github.com/imvinaypatil/webull.git@slave -U
+
+RUN apt-get autoremove --purge --yes build-essential
 
 ADD . /app
 
