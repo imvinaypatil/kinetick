@@ -64,18 +64,21 @@ class RiskAssessor(Borg):
     def get_default_instance():
         return RiskAssessor(initial_capital=6000, max_trades=2, initial_margin=6000, risk2reward=1.3)
 
-    def reset(self):
+    def reset(self, update=None, **kwargs):
         self.capital = self.initial_capital
         self.available_margin = self.initial_margin
         self.active_positions.clear()
         self.pnl = 0
         self.win_trades = 0
         self.loss_trades = 0
+        if update is not None:
+            update.message.reply_text("RMS has been reset.")
 
     def _should_trade(self, entry_price, stop_loss, quantity=None):
         spread = abs(entry_price - stop_loss)
         spread = 5 * round(spread / 5, 2)
-        _quantity = quantity or floor(max(1, int(self.risk_per_trade / spread)))
+        maxsize = floor(max(1, int(self.risk_per_trade / spread)))
+        _quantity = quantity or maxsize
         margin = _quantity * spread
         should_trade = True
         reason = None
@@ -92,10 +95,10 @@ class RiskAssessor(Borg):
         elif (entry_price * _quantity) >= self.capital:
             should_trade = False
             reason = f'Insufficient Capital. required: {entry_price * _quantity} available: {self.capital}'
-        elif quantity and int(quantity) > floor(max(1, int(self.risk_per_trade / spread))):
+        elif quantity and int(quantity) > maxsize:
             should_trade = False
             reason = f'given quantity: {quantity} exceeds risk per trade: {self.risk_per_trade}, ' \
-                     f'max allowed quantity {_quantity}'
+                     f'max allowed quantity {maxsize}'
 
         quantity = _quantity
         return should_trade, spread, quantity, reason
@@ -110,7 +113,7 @@ class RiskAssessor(Borg):
         """
         should_trade, spread, quantity, reason = self._should_trade(entry_price, stop_loss, quantity=quantity)
         if not should_trade:
-            raise Exception(f'Trade can not be made voids risk parameters {reason}')
+            raise Exception(f'Trade can not be made voids risk parameters. {reason}')
 
         direction = "LONG" if stop_loss < entry_price else "SHORT"
         target = 5 * round((spread * self.risk2reward) / 5, 2)
@@ -128,7 +131,7 @@ class RiskAssessor(Borg):
         should_trade, spread, quantity, reason = self._should_trade(position.entry_price, position.stop,
                                                                     quantity=position.quantity)
         if not should_trade:
-            raise Exception(f'Trade can not be made voids rms parameters {reason}')
+            raise Exception(f'Trade can not be made voids rms parameters. {reason}')
         self.active_positions.append(position)
         self.available_margin = self.available_margin - spread * quantity
         self.capital = self.capital - (position.entry_price * quantity)
