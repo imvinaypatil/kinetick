@@ -64,7 +64,7 @@ class RiskAssessor(Borg):
     def get_default_instance():
         return RiskAssessor(initial_capital=6000, max_trades=2, initial_margin=6000, risk2reward=1.3)
 
-    def reset(self, update=None, **kwargs):
+    def reset(self, update=None, ctx=None, **kwargs):
         self.capital = self.initial_capital
         self.available_margin = self.initial_margin
         self.active_positions.clear()
