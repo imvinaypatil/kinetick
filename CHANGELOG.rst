@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+1.0.6rc4
+--------
+*September 7, 2021*
+
+- bot: change order confirmation message text
+- bot/fix: send_message updater not iterable error
+- zerodha/fix: don't raise exception when session expiry hook is passed
+- riskassessor: fix reset bot command
+
 1.0.6rc3
 --------
 *September 6, 2021*
