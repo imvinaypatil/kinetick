@@ -359,10 +359,10 @@ class Zerodha():
                 if self._session_expiry_hook and response.status_code == 403 and data["error_type"] == "TokenException":
                     self._session_expiry_hook(
                         response, route=route, method=method, parameters=parameters, headers=headers)
-
-                # native Kite errors
-                # exp = getattr(ex, data["error_type"], ex.GeneralException)
-                raise Exception(data["message"])
+                else:
+                    # native Kite errors
+                    # exp = getattr(ex, data["error_type"], ex.GeneralException)
+                    raise Exception(data["message"])
 
             return data["data"]
         elif "csv" in response.headers["content-type"]:
