@@ -75,7 +75,7 @@ class TelegramBot(DumbBot):
             self.bot.stop()
 
     def send_message(self, msg):
-        for user in self._chat_ids and self.bot:
+        for user in self._chat_ids:
             self.bot.bot.send_message(text=msg, chat_id=user, parse_mode='Markdown')
 
     def send_order(self, position, signal, callback=None, **kwargs):
@@ -100,7 +100,7 @@ class TelegramBot(DumbBot):
         for user in self._chat_ids:
             self.bot.bot.send_message(text=message, chat_id=user, parse_mode='Markdown')
             if user == self._verified_chat_id:
-                self.bot.bot.send_message(text=f'{position.symbol} call confirm?', reply_markup=reply_markup, chat_id=user)
+                self.bot.bot.send_message(text=f'{position.symbol} {position.direction} confirm?', reply_markup=reply_markup, chat_id=user)
         if callback is not None:
             if callable(callback):
                 self._callbacks_store[key] = callback
