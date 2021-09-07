@@ -75,7 +75,7 @@ class TelegramBot(DumbBot):
             self.bot.stop()
 
     def send_message(self, msg):
-        for user in self._chat_ids and self.bot:
+        for user in self._chat_ids:
             self.bot.bot.send_message(text=msg, chat_id=user, parse_mode='Markdown')
 
     def send_order(self, position, signal, callback=None, **kwargs):
