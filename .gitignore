@@ -131,3 +131,4 @@ kinetick/tests/did.bin
 /kinetick/factory/did.bin
 /kinetick/factory/orders.csv
 /kinetick/factory/symbols.csv
+/kinetick/strategies/did.bin

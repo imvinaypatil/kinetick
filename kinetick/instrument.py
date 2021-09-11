@@ -226,8 +226,8 @@ class Instrument(str):
                                           pos_type=trade.variety,
                                           initial_stop=trade.stop, **opts)
                     position._broker_order_id = order_id
-                    if not self.parent.blotter_args["dbskip"]:
-                        position.save()
+                    self.save_to_db(position)
+
             self.bot.send_order(position, "**ENTER** #" + self, callback=callback)
 
     # ---------------------------------------
@@ -249,10 +249,10 @@ class Instrument(str):
                     self.order(txn, trade.quantity, pos_type=trade.variety, **opts, **args)
                 else:
                     self.cancel_order(trade.broker_order_id)
+
             self.bot.send_order(position, "**EXIT** #" + self, callback=callback)
 
-        if not self.parent.blotter_args["dbskip"]:
-            position.save()
+        self.save_to_db(position)
 
     # ---------------------------------------
     def order(self, txn_type, quantity, **kwargs):
@@ -489,6 +489,10 @@ class Instrument(str):
         return pos
 
     # ---------------------------------------
+    def set_position(self, position):
+        self._position = position
+
+    # ---------------------------------------
     def get_portfolio(self):
         """Get portfolio data for the instrument
         !IMPORTANT: NOT SUPPORTED. UNSTABLE API
@@ -668,6 +672,11 @@ class Instrument(str):
                 signal identifier (1, 0, -1)
         """
         return self.parent._log_signal(self, signal)
+
+    # ---------------------------------------
+    def save_to_db(self, obj):
+        if not self.parent.blotter_args["dbskip"]:
+            obj.save()
 
     # ---------------------------------------
     @property
