@@ -14,8 +14,7 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   make install
 
 RUN python -m pip install --upgrade pip &&  \
-    pip install -r requirements.txt -c constraints.txt --no-cache-dir && \
-    pip install git+https://github.com/imvinaypatil/webull.git@slave -U
+    pip install -r requirements.txt -c constraints.txt --no-cache-dir
 
 RUN apt-get autoremove --purge --yes build-essential
 

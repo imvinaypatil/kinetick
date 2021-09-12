@@ -54,7 +54,7 @@ setup(
         'python-telegram-bot>=12.7', 'paho-mqtt>=1.5.0',
         'TA-Lib>=0.4.18', 'webull'
     ],
-    dependency_links=['git+git://github.com/imvinaypatil/webull.git@slave'],
+    dependency_links=['git+git://github.com/imvinaypatil/webull.git@v1.0.1'],
     entry_points={
         'console_scripts': [
             'sample=sample:main',
