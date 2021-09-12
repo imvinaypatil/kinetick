@@ -180,7 +180,7 @@ class Instrument(str):
         }
 
     # ---------------------------------------
-    def create_position(self, entry_price, stop_loss, quantity=None, pos_type=PositionType.CO):
+    def create_position(self, entry_price, stop_loss, quantity=None, pos_type=PositionType.CO) -> Position:
         """
         return trade if all the conditions are met
         :param pos_type: position variety. ex MIS, CO, CNC. default to MIS. Possible types are defined in enums.PositionType
@@ -203,7 +203,7 @@ class Instrument(str):
                             _variety=pos_type)
 
     # ---------------------------------------
-    def open_position(self, position, **kwargs):
+    def open_position(self, position: Position, **kwargs):
         if position.active or self._position is not None:
             raise Exception("Position can't be opened because there is an active open position")
 
@@ -231,7 +231,7 @@ class Instrument(str):
             self.bot.send_order(position, "**ENTER** #" + self, callback=callback)
 
     # ---------------------------------------
-    def close_position(self, position, **kwargs):
+    def close_position(self, position: Position, **kwargs):
         if self._position is not None and position is self._position:
             self._position = None
         if not position.active:
