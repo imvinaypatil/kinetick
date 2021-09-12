@@ -226,7 +226,7 @@ commands
 
 - ``/report`` - get overview about trades
 - ``/help`` - get help
-- ``/reset-rms`` - resets RiskAssessor parameters to its initial values.
+- ``/resetrms`` - resets RiskAssessor parameters to its initial values.
 
 
 
@@ -236,11 +236,11 @@ Can be specified either as env variable or cmdline arg
 
 .. list-table::
 
-   * - option
-     - required?
-     - example
-     - default
-     - note
+   * - Parameter
+     - Required?
+     - Example
+     - Default
+     - Description
    * - ``symbols``
      -
      -  symbols=./symbols.csv
@@ -276,11 +276,6 @@ Can be specified either as env variable or cmdline arg
      - initial_capital=10000
      - 1000
      - Max capital deployed
-   * - ``initial_margin``
-     - yes
-     - initial_margin=1000
-     - 100
-     - Not to be mistaken with broker margin. This is the max amount you can afford to loose
    * - ``initial_margin``
      - yes
      - initial_margin=1000
@@ -336,6 +331,11 @@ Can be specified either as env variable or cmdline arg
      - resolution=1m
      - 1
      - Min Bar interval
+   * - ``preload_positions``
+     - No
+     - preload_positions=30D
+     - -
+     - Loads only overnight positions.Available options: 1D - 1 Day, 1W - 1 Week, 1H - 1 Hour
 
 Docker Instructions
 ===================

@@ -33,6 +33,19 @@ class Position(DynamicDocument):
     sec_type = StringField(default='STK')  # TODO add enum
     underlying = StringField(required=False)
 
+    meta = {
+        'indexes': [
+            {
+                'fields': ['_active'],
+                'sparse': True
+            },
+            {
+                'fields': ['algo'],
+                'sparse': True
+            }
+        ]
+    }
+
     def open_position(self):
         if self._direction is None:
             raise Exception("no direction provided")
@@ -91,3 +104,7 @@ class Position(DynamicDocument):
     @property
     def variety(self):
         return self._variety
+
+    @staticmethod
+    def find(algo, **query) -> list:
+        return Position.objects(algo=algo, **query)

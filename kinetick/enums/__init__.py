@@ -167,6 +167,13 @@ class PositionType:
     CO = "CO"  # Cover Order
     CNC = "CNC"  # Cash N Carry
 
+    @staticmethod
+    def get_all():
+        return [PositionType.MIS, PositionType.CO, PositionType.CNC]
+
+    @staticmethod
+    def is_overnight_position(pos: str) -> bool:
+        return pos.upper() == PositionType.CNC
 
 class SecurityType:
     OPTION = "OPT"

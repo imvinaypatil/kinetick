@@ -32,11 +32,12 @@ from abc import ABCMeta, abstractmethod
 import warnings
 
 import pandas as pd
+from kinetick.models import Position
 from numpy import nan
 
 from kinetick.utils import utils, asynctools
 from kinetick.broker import Broker
-from kinetick.enums import Timeframes
+from kinetick.enums import Timeframes, PositionType
 from kinetick.risk_assessor import RiskAssessor
 from kinetick.utils.utils import create_logger
 from kinetick.workflow import validate_columns as validate_csv_columns
@@ -112,7 +113,7 @@ class Algo(Broker):
                  tick_window=1, bar_window=100, timezone="UTC", preload=None,
                  continuous=True, blotter=None, sms=None, log=None,
                  backtest=False, start=None, end=None, data=None, output=None,
-                 backfill=False, name=None, **kwargs):
+                 backfill=False, name=None, preload_positions=None, **kwargs):
 
         # detect algo name
         self.name = name or str(self.__class__).split('.')[-1].split("'")[0]
@@ -148,6 +149,7 @@ class Algo(Broker):
         self.resolution = Timeframes.timeframe_to_resolution(resolution)
         self.timezone = timezone
         self.preload = preload
+        self.preload_positions = self.args['preload_positions']
         self.backfill = self.args["backfill"]
         self.continuous = continuous
 
@@ -299,6 +301,10 @@ class Algo(Broker):
                             help='Risk to Reward (default=1). ex. 1.2', required=False)
         parser.add_argument('--risk_per_trade', default=os.getenv("risk_per_trade") or 100, type=float,
                             help='Risk per Trade (default=100), ex. 100', required=False)
+        parser.add_argument('--preload_positions',
+                            default=os.getenv("preload_positions") or self.args["preload_positions"]
+                            if 'preload_positions' in self.args else None,
+                            help='Preload positions. Only available in live trade. ex. 4D, 1H', required=False)
 
         cmd_args, _ = parser.parse_known_args()
         args = {arg: val for arg, val in vars(
@@ -414,6 +420,9 @@ class Algo(Broker):
             self.blotter.drip(history, drip_handler)
 
         else:
+            if not self.blotter_args["dbskip"] and self.preload_positions:
+                start = utils.backdate(self.preload_positions)
+                self.load_positions(start)
             # place history self.bars
             self.bars = history
 
@@ -979,3 +988,16 @@ class Algo(Broker):
         df = utils.force_options_columns(bars)
         self._bar_handler(df)
         return bars
+
+    def load_positions(self, start):
+        for pos in Position.find(algo=self.name, _active=True, _symbol__in=self.symbols,
+                                 datetime__gt=start):
+            if not PositionType.is_overnight_position(pos.variety):
+                continue
+            instrument = self.get_instrument(pos.symbol)
+            instrument.set_position(pos)
+            try:
+                self.risk_assessor.enter_position(pos)
+            except Exception as e:
+                self.log_algo.warning(
+                    "Preloaded %s position exceed current risk parameters. %s", pos.symbol, e)
