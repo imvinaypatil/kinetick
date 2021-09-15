@@ -357,7 +357,7 @@ class Zerodha():
             if data.get("error_type"):
                 # Call session hook if its registered and TokenException is raised
                 if self._session_expiry_hook and response.status_code == 403 and data["error_type"] == "TokenException":
-                    self._session_expiry_hook(
+                    return self._session_expiry_hook(
                         response, route=route, method=method, parameters=parameters, headers=headers)
                 else:
                     # native Kite errors
