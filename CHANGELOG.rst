@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+1.0.6rc6
+--------
+*September 15, 2021*
+
+- fix/zerodha: nonetype not subscriptable when zerodha retry login/order
+
+1.0.6rc5
+--------
+*September 12, 2021*
+
+- feat: add preload active positions
+- bump webull v1.0.1
+
 1.0.6rc4
 --------
 *September 7, 2021*
