@@ -990,12 +990,12 @@ class Algo(Broker):
         return bars
 
     def load_positions(self, start):
-        for pos in Position.find(algo=self.name, _active=True, _symbol__in=self.symbols,
-                                 datetime__gt=start):
+        for pos in Position.find(algo=self.name, _active=True, datetime__gt=start):
             if not PositionType.is_overnight_position(pos.variety):
                 continue
             instrument = self.get_instrument(pos.symbol)
             instrument.set_position(pos)
+            self.add_instruments([instrument])
             try:
                 self.risk_assessor.enter_position(pos)
             except Exception as e:

@@ -111,21 +111,11 @@ class Broker():
 
         # -----------------------------------
         # create contracts
-        instrument_tuples_dict = {}
-        for instrument in instruments:
-            try:
-                if isinstance(instrument, Contract):
-                    instrument = self.broker.contract_to_tuple(instrument)
-                else:
-                    instrument = utils.create_contract_tuple(instrument)
-                contractString = self.broker.contractString(instrument)
-                instrument_tuples_dict[contractString] = instrument
-                self.broker.createContract(instrument)
-            except Exception as e:
-                self.log_broker.error("Error creating contract", e)
+        self.instruments = {}
+        self.symbols = []
 
-        self.instruments = instrument_tuples_dict
-        self.symbols = list(self.instruments.keys())
+        self.add_instruments(instruments)
+
         self.instrument_combos = {}
 
         self.instrument_obj = {}
@@ -190,14 +180,21 @@ class Broker():
         self.db_connection = connect(**params)
 
     # ---------------------------------------
-    def add_instruments(self, *instruments):
-        """ add instruments after initialization """
+    def add_instruments(self, instruments):
+        instrument_tuples_dict = {}
         for instrument in instruments:
-            instrument = self.broker.contract_to_tuple(instrument)
-            contractString = self.broker.contractString(instrument)
-            self.instruments[contractString] = instrument
-            self.broker.createContract(instrument)
+            try:
+                if isinstance(instrument, Contract):
+                    instrument = self.broker.contract_to_tuple(instrument)
+                else:
+                    instrument = utils.create_contract_tuple(instrument)
+                contractString = self.broker.contractString(instrument)
+                instrument_tuples_dict[contractString] = instrument
+                self.broker.createContract(instrument)
+            except Exception as e:
+                self.log_broker.error("Error creating contract", e)
 
+        self.instruments.update(instrument_tuples_dict)
         self.symbols = list(self.instruments.keys())
 
     # ---------------------------------------

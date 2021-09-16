@@ -1,11 +1,13 @@
 Release Notes
 =============
 
-1.0.6rc7
+1.0.6rc8
 --------
 *September 16, 2021*
 
 - broker/fix: pos_type getting None when non bracket order
+- fix: remove symbols filter when loading positions
+- refactor: add_instruments
 
 1.0.6rc6
 --------
