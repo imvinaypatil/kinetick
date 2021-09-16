@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+1.0.6rc7
+--------
+*September 16, 2021*
+
+- broker/fix: pos_type getting None when non bracket order
+
 1.0.6rc6
 --------
 *September 15, 2021*
