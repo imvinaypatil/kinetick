@@ -543,7 +543,7 @@ class Broker():
         trigger_price = kwargs['trigger_price'] if 'trigger_price' in kwargs else initial_stop
         # create & submit order
         sec_type = kwargs['sec_type'] if 'sec_type' in kwargs else SecurityType.STOCK
-        pos_type = pos_type or PositionType.CO if bracket else None
+        pos_type = pos_type or (PositionType.CO if bracket else None)
         variety, product = self.zerodha.get_order_variety(sec_type, pos_type)
 
         if sec_type == SecurityType.OPTION:
