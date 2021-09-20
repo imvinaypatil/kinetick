@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+1.0.6
+--------
+*September 20, 2021*
+
+- feat: add preload active positions
+- bug fixes and improvements
+
 1.0.6rc8
 --------
 *September 16, 2021*
