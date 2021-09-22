@@ -133,8 +133,8 @@ class Algo(Broker):
 
         # -----------------------------------
         # assign algo params
-        self.bars = pd.DataFrame()
-        self.ticks = pd.DataFrame()
+        self.bars = pd.DataFrame(columns=["symbol", "symbol_group"])
+        self.ticks = pd.DataFrame(columns=["symbol", "symbol_group"])
         self.quotes = {}
         self.books = {}
         self.tick_count = 0
