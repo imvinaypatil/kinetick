@@ -24,7 +24,7 @@ class DumbBot:
         pass
 
     @abstractmethod
-    def send_order(self, order, signal, callback, **kwargs):
+    def send_order(self, order, signal, callback, commands, **kwargs):
         callback(**kwargs)
 
     @abstractmethod

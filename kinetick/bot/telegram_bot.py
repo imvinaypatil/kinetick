@@ -78,12 +78,11 @@ class TelegramBot(DumbBot):
         for user in self._chat_ids:
             self.bot.bot.send_message(text=msg, chat_id=user, parse_mode='Markdown')
 
-    def send_order(self, position, signal, callback=None, **kwargs):
+    def send_order(self, position, signal, callback=None, commands: tuple = (), **kwargs):
         self._order_number += 1
         key = signal + str(self._order_number)
-        keyboard = [[InlineKeyboardButton("Limit", callback_data=key + "$limit"),
-                     InlineKeyboardButton("Cancel", callback_data=key + "$cancel"),
-                     InlineKeyboardButton("Market", callback_data=key + "$market")]]
+        keyboard = [list(map(lambda cmd: InlineKeyboardButton(str(cmd), callback_data=key + f"${cmd}"), commands))]
+        # cmd used in _button handler to pass the selected option to callback.
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -100,7 +99,8 @@ class TelegramBot(DumbBot):
         for user in self._chat_ids:
             self.bot.bot.send_message(text=message, chat_id=user, parse_mode='Markdown')
             if user == self._verified_chat_id:
-                self.bot.bot.send_message(text=f'{position.symbol} {position.direction} confirm?', reply_markup=reply_markup, chat_id=user)
+                self.bot.bot.send_message(text=f'{position.symbol} {position.direction} confirm?',
+                                          reply_markup=reply_markup, chat_id=user)
         if callback is not None:
             if callable(callback):
                 self._callbacks_store[key] = callback
@@ -144,9 +144,7 @@ class TelegramBot(DumbBot):
             if callback is not None:
                 del self._callbacks_store[data]
                 try:
-                    market = True if cmd == "market" else False
-                    cancel = True if cmd == "cancel" else False
-                    callback(market=market, cancel=cancel)
+                    callback(commands=(cmd, ))
                     query.edit_message_text(text="{} order request sent".format(cmd))
                 except Exception as e:
                     logger.error('Error executing command %s', e)

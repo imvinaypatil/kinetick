@@ -213,7 +213,9 @@ class Instrument(str):
         if self.parent.backtest:
             self.order(txn_type, position.quantity, **kwargs)
         else:
-            def callback(trade=position, market=False, cancel=False, txn=txn_type, opts=kwargs, **args):
+            def callback(trade=position, txn=txn_type, commands=(), opts=kwargs, **args):
+                cancel = True if 'cancel' in commands else False
+                market = True if 'market' in commands else False
                 if cancel:
                     self._position = None
                     self.logger.info(f'Order cancelled - ${trade.symbol}')
@@ -228,29 +230,44 @@ class Instrument(str):
                     position._broker_order_id = order_id
                     self.save_to_db(position)
 
-            self.bot.send_order(position, "**ENTER** #" + self, callback=callback)
+            self.bot.send_order(position, "**ENTER** #" + self, callback=callback,
+                                commands=('limit', 'cancel', 'market'))
 
     # ---------------------------------------
-    def close_position(self, position: Position, **kwargs):
-        if self._position is not None and position is self._position:
-            self._position = None
-        if not position.active:
-            raise Exception("Position can't be closed because the status is inactive")
-        position.close_position()
-        self.parent.risk_assessor.exit_position(position)
-
+    def close_position(self, position: Position, exit_price=0, force=False, **kwargs):
         txn_type = "SELL" if position.direction == "LONG" else "BUY"  # EXIT
+        tick = self.get_tick()
+        exit_price = exit_price or (tick['last'] if tick else
+                                    self.get_bar()['close'] if self.get_bar() else 0)
+        position.exit_price = exit_price
+
+        def _close(trade=position, txn=txn_type, market=True, opts=kwargs, **args):
+            if self._position is not None and trade is self._position:
+                self._position = None
+            if not trade.active:
+                raise Exception("Position can't be closed because the status is inactive")
+            trade.close_position()
+            self.parent.risk_assessor.exit_position(trade)
+            if trade.variety == PositionType.MIS or trade.variety == PositionType.CNC:
+                # TODO if MIS verify if position is open with broker executed.
+                self.order(txn, trade.quantity, pos_type=trade.variety,
+                           limit_price=0 if market else trade.exit_price,
+                           **opts, **args)
+            else:
+                self.cancel_order(trade.broker_order_id)
+            self.save_to_db(position)
+
         if self.parent.backtest:
             self.order(txn_type, position.quantity, **kwargs)
+        elif force:
+            _close()
         else:
-            def callback(trade=position, txn=txn_type, opts=kwargs, **args):
-                if trade.variety == PositionType.MIS or trade.variety == PositionType.CNC:
-                    # TODO if MIS verify if position is open with broker executed.
-                    self.order(txn, trade.quantity, pos_type=trade.variety, **opts, **args)
-                else:
-                    self.cancel_order(trade.broker_order_id)
+            def callback(trade=position, commands=(), **args):
+                market = True if 'market' in commands else False
+                _close(market=market, **args)
 
-            self.bot.send_order(position, "**EXIT** #" + self, callback=callback)
+            self.bot.send_order(position, "**EXIT** #" + self, callback=callback,
+                                commands=('limit', 'market'))
 
         self.save_to_db(position)
 

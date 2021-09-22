@@ -13,7 +13,6 @@
 # limitations under the License.
 import json
 import logging
-import threading
 import os
 
 from kinetick.utils import utils
@@ -175,7 +174,7 @@ class MacdSuperStrategy(Algo):
             self.record(EXIT_REASON=position.exit_reason)
             return position
         except Exception as e:
-            logger.error(e)
+            logger.error("Error exiting trade %s", e)
 
     # ---------------------------------------
     def enter_trade(self, instrument, entry_price, stop_loss):
@@ -186,7 +185,7 @@ class MacdSuperStrategy(Algo):
             instrument.open_position(position)
             return position
         except Exception as e:
-            logger.error(e)
+            logger.error("Error entering trade %s", e)
 
     # ---------------------------------------
 
