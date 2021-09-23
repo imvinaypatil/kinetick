@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+1.0.7rc2
+--------
+*September 23, 2021*
+
+- instrument/fix: close_position repeated alerts + add cancel option
+
+1.0.7rc1
+--------
+*September 22, 2021*
+
+- bot/refactor: accept commands from caller
+- instrument: add force option to close_position
+
 1.0.6
 --------
 *September 20, 2021*
