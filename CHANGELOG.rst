@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+1.0.7rc4
+--------
+*September 29, 2021*
+
+- fix: incorrect margin calculation when close_position cancel
+
 1.0.7rc2
 --------
 *September 23, 2021*

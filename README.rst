@@ -336,6 +336,11 @@ Can be specified either as env variable or cmdline arg
      - preload_positions=30D
      - -
      - Loads only overnight positions.Available options: 1D - 1 Day, 1W - 1 Week, 1H - 1 Hour
+   * - ``CHAT_ID``
+     - No
+     - CHAT_ID=12345
+     - -
+     - default chat user id to which trade notifications are sent requiring no login
 
 Docker Instructions
 ===================
