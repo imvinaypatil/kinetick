@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime
-from math import floor, ceil
+from math import floor
 
 from kinetick.bot import Bot
 from kinetick.models import Position
@@ -50,10 +50,10 @@ class RiskAssessor(Borg):
 
     def availableMarginHandler(self, update, context):
         msg = "```\n" \
-              "Available margin: {} \n" \
+              "Available margin: {:.2f} \n" \
               "Active Trades: {} \n" \
-              "Available capital: {} \n" \
-              "PNL: {} \n" \
+              "Available capital: {:.2f} \n" \
+              "PNL: {:.2f} \n" \
               "Win Trades: {} \n" \
               "Loss Trades: {} \n" \
               "```".format(self.available_margin, len(self.active_positions),
@@ -141,15 +141,17 @@ class RiskAssessor(Borg):
     def exit_position(self, position):
         if position.exit_time is None:
             position.exit_time = datetime.now()
-        if position.exit_price is None:
-            raise Exception("Trade exit_price is not provided")
 
         pnl = position.pnl()
 
-        self.available_margin = round(self.available_margin + pnl, 2) if pnl > 0 else self.available_margin
-        # if pnl is -ve then it would already be subtracted when entering the trade.
-        self.capital = self.capital + (position.entry_price * position.quantity) + pnl
+        # reclaim margin
+        spread = abs(position.entry_price - position.stop)
+        spread = 5 * round(spread / 5, 2)
+        self.available_margin += spread * position.quantity + pnl
+        self.available_margin = self.available_margin if self.available_margin < self.initial_margin \
+            else self.initial_margin
         # reclaim the capital deployed in trade
+        self.capital += (position.entry_price * position.quantity) + pnl
         self.pnl += pnl
         if pnl > 0:
             self.win_trades += 1
@@ -158,7 +160,5 @@ class RiskAssessor(Borg):
 
         index = self.active_positions.index(position)
         del self.active_positions[index]
-
-        position.realized_pnl = round(pnl * 2, 2) / 2
 
         return position

@@ -239,14 +239,13 @@ class Instrument(str):
             self._position = None
         if not position.active:
             raise Exception("Position can't be closed because the status is inactive")
-        position.close_position()
-        self.parent.risk_assessor.exit_position(position)
 
         txn_type = "SELL" if position.direction == "LONG" else "BUY"  # EXIT
         tick = self.get_tick()
         exit_price = exit_price or (tick['last'] if tick else
                                     self.get_bar()['close'] if self.get_bar() else 0)
         position.exit_price = exit_price
+        position.close_position()
 
         def _close(trade=position, txn=txn_type, market=True, opts=kwargs, **args):
             if trade.variety == PositionType.MIS or trade.variety == PositionType.CNC:
@@ -256,6 +255,8 @@ class Instrument(str):
                            **opts, **args)
             else:
                 self.cancel_order(trade.broker_order_id)
+
+            self.parent.risk_assessor.exit_position(position)
 
         if self.parent.backtest:
             self.order(txn_type, position.quantity, **kwargs)
@@ -267,7 +268,6 @@ class Instrument(str):
                 cancel = True if 'cancel' in commands else False
                 if cancel:
                     trade.open_position()
-                    self.parent.risk_assessor.enter_position(trade)
                     self._position = trade
                     self.save_to_db(trade)
                 else:
