@@ -235,19 +235,19 @@ class Instrument(str):
 
     # ---------------------------------------
     def close_position(self, position: Position, exit_price=0, force=False, **kwargs):
+        if self._position is not None and position is self._position:
+            self._position = None
+        if not position.active:
+            raise Exception("Position can't be closed because the status is inactive")
+
         txn_type = "SELL" if position.direction == "LONG" else "BUY"  # EXIT
         tick = self.get_tick()
         exit_price = exit_price or (tick['last'] if tick else
                                     self.get_bar()['close'] if self.get_bar() else 0)
         position.exit_price = exit_price
+        position.close_position()
 
         def _close(trade=position, txn=txn_type, market=True, opts=kwargs, **args):
-            if self._position is not None and trade is self._position:
-                self._position = None
-            if not trade.active:
-                raise Exception("Position can't be closed because the status is inactive")
-            trade.close_position()
-            self.parent.risk_assessor.exit_position(trade)
             if trade.variety == PositionType.MIS or trade.variety == PositionType.CNC:
                 # TODO if MIS verify if position is open with broker executed.
                 self.order(txn, trade.quantity, pos_type=trade.variety,
@@ -255,7 +255,8 @@ class Instrument(str):
                            **opts, **args)
             else:
                 self.cancel_order(trade.broker_order_id)
-            self.save_to_db(position)
+
+            self.parent.risk_assessor.exit_position(position)
 
         if self.parent.backtest:
             self.order(txn_type, position.quantity, **kwargs)
@@ -264,10 +265,16 @@ class Instrument(str):
         else:
             def callback(trade=position, commands=(), **args):
                 market = True if 'market' in commands else False
-                _close(market=market, **args)
+                cancel = True if 'cancel' in commands else False
+                if cancel:
+                    trade.open_position()
+                    self._position = trade
+                    self.save_to_db(trade)
+                else:
+                    _close(market=market, **args)
 
             self.bot.send_order(position, "**EXIT** #" + self, callback=callback,
-                                commands=('limit', 'market'))
+                                commands=('limit', 'cancel', 'market'))
 
         self.save_to_db(position)
 

@@ -62,9 +62,13 @@ class Position(DynamicDocument):
             raise Exception("no quantity provided")
         if self.exit_time is None:
             self.exit_time = datetime.now()
+        self.realized_pnl = self.pnl()
         self._active = False
 
     def pnl(self):
+        if not self.exit_price:
+            raise Exception("Trade exit_price is not provided")
+
         pnl = abs(self.exit_price - self.entry_price)
 
         sl_hit = False
@@ -75,7 +79,7 @@ class Position(DynamicDocument):
 
         pnl = -pnl if sl_hit else pnl
         pnl = pnl * self._quantity
-        return pnl
+        return round(pnl, 2)
 
     @property
     def active(self):
