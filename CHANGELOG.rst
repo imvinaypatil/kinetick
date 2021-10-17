@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+1.0.7
+--------
+*October 17, 2021*
+
+- bot/refactor: accept commands from caller
+- instrument: add force option to close_position
+- bug fixes and improvements
+
 1.0.7rc4
 --------
 *September 29, 2021*
