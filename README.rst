@@ -363,7 +363,7 @@ Backtesting
 
 .. code:: bash
 
-    $ python -m strategy --start "2021-03-06 00:15:00" --end "2021-03-10 00:15:00" --backtest
+    $ python -m strategy --start "2021-03-06 00:15:00" --end "2021-03-10 00:15:00" --backtest --backfill
 
 
 .. note::
