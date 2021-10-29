@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+1.0.8rc1
+--------
+*October 29, 2021*
+
+- bot: allow non-authenticated users to be audience
+
 1.0.7
 --------
 *October 17, 2021*
