@@ -20,7 +20,7 @@
     :alt: PyPi version
 
 .. image:: https://img.shields.io/discord/881151290741256212?logo=discord
-    :target: https://discord.gg/VhQ3sddp
+    :target: https://discord.gg/xqD6RmqvBV
     :alt: Chat on Discord
 
 \
