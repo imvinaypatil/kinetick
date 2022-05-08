@@ -103,8 +103,8 @@ class Broker():
 
         self.broker = Webull()
         self.broker.callbacks = self._callback
-        self.zerodha = Zerodha(zerodha_user, zerodha_password, zerodha_pin,
-                               debug=True) if not self.backtest else None
+        self.client = Zerodha(zerodha_user, zerodha_password, zerodha_pin,
+                              debug=True) if not self.backtest else None
         self.connect()
 
         self.log_broker.info("Connection established...")
@@ -220,8 +220,8 @@ class Broker():
     # ---------------------------------------
     def connect(self):
         self.broker.connect(stream=False)
-        if not self.backtest and self.zerodha:
-            self.zerodha.login()
+        if not self.backtest and self.client:
+            self.client.login()
 
     # ---------------------------------------
     # @abstractmethod
@@ -267,7 +267,7 @@ class Broker():
 
             # continue...
 
-            order = self.zerodha.orders[msg.orderId]
+            order = self.client.orders[msg.orderId]
 
             # print("***********************\n\n", order, "\n\n***********************")
             orderId = msg.orderId
@@ -485,7 +485,8 @@ class Broker():
     def _create_order(self, symbol, direction, quantity, order_type="",
                       limit_price=0, expiry=0, order_id=0, target=0,
                       initial_stop=0, trail_stop_at=0, trail_stop_by=0,
-                      stop_limit=False, trail_stop_type='percent', pos_type=None, **kwargs):
+                      stop_limit=False, trail_stop_type='percent', pos_type=None, tradingsymbol=None,
+                      sec_type=None, **kwargs):
 
         # fix prices to comply with contract's min-tick
         ticksize = self.get_contract_details(symbol)['m_minTick']
@@ -539,26 +540,22 @@ class Broker():
                 trail_stop_at > 0) | (trail_stop_by > 0)
         trigger_price = kwargs['trigger_price'] if 'trigger_price' in kwargs else initial_stop
         # create & submit order
-        sec_type = kwargs['sec_type'] if 'sec_type' in kwargs else SecurityType.STOCK
+        sec_type = sec_type if sec_type is not None else SecurityType.STOCK
         pos_type = pos_type or (PositionType.CO if bracket else None)
-        variety, product = self.zerodha.get_order_variety(sec_type, pos_type)
 
-        if sec_type == SecurityType.OPTION:
-            tradingsymbol = kwargs['opt_ticker']
-            order_id = self.zerodha.place_order(variety=variety, tradingsymbol=tradingsymbol,
-                                                transaction_type=direction.upper(),
-                                                quantity=abs(order_quantity), product=product,
-                                                order_type=order_type,
-                                                exchange=Zerodha.EXCHANGE_NFO, price=limit_price,
-                                                trigger_price=trigger_price, stoploss=initial_stop)
-        else:
-            # simple order
-            order_id = self.zerodha.place_order(variety=variety, tradingsymbol=symbol,
-                                                transaction_type=direction.upper(),
-                                                quantity=abs(order_quantity), product=product,
-                                                order_type=order_type,
-                                                exchange=Zerodha.EXCHANGE_NSE, price=limit_price,
-                                                trigger_price=trigger_price, stoploss=initial_stop)
+        variety, product = self.client.get_order_variety(sec_type, pos_type)
+        # if it's stock trade then use symbol as tradingsymbol else caller should provide tradingsymbol
+        tradingsymbol = symbol if sec_type == SecurityType.STOCK else tradingsymbol
+        if tradingsymbol is None:
+            raise Exception("No tradingsymbol provided")
+        exchange = Zerodha.EXCHANGE_NSE if sec_type == SecurityType.STOCK else Zerodha.EXCHANGE_NFO
+
+        order_id = self.client.place_order(variety=variety, tradingsymbol=tradingsymbol,
+                                           transaction_type=direction.upper(), quantity=abs(order_quantity),
+                                           product=product, order_type=order_type,
+                                           exchange=exchange, price=limit_price,
+                                           trigger_price=trigger_price, stoploss=initial_stop)
+
         self.log_broker.debug('PLACED ORDER: %s %s', self.broker.contract_to_dict(
             contract), order_id)
 
@@ -620,7 +617,7 @@ class Broker():
     # ---------------------------------------
     def _cancel_order(self, order_id):
         if order_id is not None:
-            return self.zerodha.exit_order(order_id)
+            return self.client.exit_order(order_id)
 
     # ---------------------------------------
     def modify_order_group(self, symbol, orderId, entry=None,
@@ -654,7 +651,7 @@ class Broker():
     # ---------------------------------------
     def _cancel_orphan_orders(self, orderId):
         """ cancel child orders when parent is gone """
-        orders = self.zerodha.orders
+        orders = self.client.orders
         for order in orders:
             order = orders[order]
             if order['parentId'] != orderId:
@@ -674,7 +671,7 @@ class Broker():
 
             # cancel order if expired
             if delta < 0:
-                self.zerodha.cancel_order(orderId)
+                self.client.cancel_order(orderId)
                 if orderId in self.orders.pending_ttls:
                     if orderId in self.orders.pending_ttls:
                         del self.orders.pending_ttls[orderId]
@@ -684,7 +681,7 @@ class Broker():
 
     # ---------------------------------------------------------
     def _expire_pending_order(self, symbol, orderId):
-        self.zerodha.cancel_order(order_id=orderId) #TODO
+        self.client.cancel_order(order_id=orderId)  # TODO
 
         if orderId in self.orders.pending_ttls:
             del self.orders.pending_ttls[orderId]

@@ -13,6 +13,7 @@
 # limitations under the License.
 import logging
 import os
+import traceback
 from abc import ABCMeta
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -53,7 +54,6 @@ class TelegramBot(DumbBot):
             self.bot.dispatcher.add_handler(CommandHandler("stop", self._stop_cmd_handler))
             self.bot.dispatcher.add_handler(CommandHandler("login", self._login_cmd_handler))
             self.bot.dispatcher.add_handler(CallbackQueryHandler(self._button))
-            # dispatcher.add_handler(CommandHandler("help", help))
 
             logger.info("starting bot..")
             try:
@@ -114,6 +114,7 @@ class TelegramBot(DumbBot):
     def _start_cmd_handler(self, update, context):
         update.message.reply_text('Hi {}, Use `/login <password>` command to start trading.'
                                   .format(update.message.from_user.first_name), parse_mode='Markdown')
+        self._chat_ids.add(update.message.chat_id)
         for listener in self._on_connected_listeners:
             listener(update.message.chat_id)
 
@@ -147,6 +148,7 @@ class TelegramBot(DumbBot):
                     callback(commands=(cmd, ))
                     query.edit_message_text(text="{} order request sent".format(cmd))
                 except Exception as e:
+                    traceback.print_exc()
                     logger.error('Error executing command %s', e)
                     query.edit_message_text(text="Error sending order request. Reason: {}".format(e))
         else:
