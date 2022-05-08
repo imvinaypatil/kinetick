@@ -78,6 +78,7 @@ class RiskAssessor(Borg):
         spread = abs(entry_price - stop_loss)
         spread = 5 * round(spread / 5, 2)
         maxsize = floor(max(1, int(self.risk_per_trade / spread)))
+        maxsize = min(maxsize, int(self.capital / entry_price))
         _quantity = quantity or maxsize
         margin = _quantity * spread
         should_trade = True

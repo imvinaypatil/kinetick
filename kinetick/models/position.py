@@ -26,7 +26,7 @@ class Position(DynamicDocument):
     exit_price = FloatField(default=0.0)
     realized_pnl = FloatField(default=0.0)
     _active = BooleanField(default=False, db_field="active")
-    opt_ticker = StringField(max_length=50, required=False)
+    tradingsymbol = StringField(max_length=50, required=False)
     opt_strike = FloatField(required=False)
     opt_type = StringField(require=False),
     opt_expiry = StringField(required=False),

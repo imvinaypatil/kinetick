@@ -377,12 +377,14 @@ class Zerodha():
         return self._account
 
     def get_order_variety(self, sec_type, pos_type):
-        if sec_type == SecurityType.OPTION:
-            return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_MIS
         if sec_type == SecurityType.STOCK and pos_type == PositionType.CO:
             return Zerodha.VARIETY_CO, Zerodha.PRODUCT_MIS
         if sec_type == SecurityType.STOCK and pos_type == PositionType.MIS:
             return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_MIS
+        if sec_type == SecurityType.OPTION or sec_type == SecurityType.FUTURE:
+            if pos_type == PositionType.CO or pos_type == PositionType.MIS:
+                return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_MIS
+            return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_NRML
         return Zerodha.VARIETY_REGULAR, Zerodha.PRODUCT_CNC
 
 

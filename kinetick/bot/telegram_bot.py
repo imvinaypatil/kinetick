@@ -13,6 +13,7 @@
 # limitations under the License.
 import logging
 import os
+import traceback
 from abc import ABCMeta
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -147,6 +148,7 @@ class TelegramBot(DumbBot):
                     callback(commands=(cmd, ))
                     query.edit_message_text(text="{} order request sent".format(cmd))
                 except Exception as e:
+                    traceback.print_exc()
                     logger.error('Error executing command %s', e)
                     query.edit_message_text(text="Error sending order request. Reason: {}".format(e))
         else:

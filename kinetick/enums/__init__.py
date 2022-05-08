@@ -166,6 +166,7 @@ class PositionType:
     MIS = "MIS"  # Intraday with margin
     CO = "CO"  # Cover Order
     CNC = "CNC"  # Cash N Carry
+    NRML = "NRML"  # derivative regular variety
 
     @staticmethod
     def get_all():
@@ -174,6 +175,7 @@ class PositionType:
     @staticmethod
     def is_overnight_position(pos: str) -> bool:
         return pos.upper() == PositionType.CNC
+
 
 class SecurityType:
     OPTION = "OPT"
