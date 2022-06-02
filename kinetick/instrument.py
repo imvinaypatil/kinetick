@@ -89,9 +89,8 @@ class Instrument(str):
         #     bars = bars[-lookback:]
 
         if not bars.empty > 0:  # and bars['asset_class'].values[-1] not in ("OPT", "FOP")
-            bars.drop(bars.columns[
-                          bars.columns.str.startswith('opt_')].tolist(),
-                      inplace=True, axis=1)
+            bars = bars.drop(bars.columns[
+                          bars.columns.str.startswith('opt_')].tolist(), axis=1)
 
         if as_dict:
             bars.loc[:, 'datetime'] = bars.index
