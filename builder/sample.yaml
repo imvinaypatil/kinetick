@@ -1,0 +1,82 @@
+version: 1
+
+strategy:
+  name: Bull
+  refreshFrequency: "1m"
+  barResolution: 1m window=800
+  barResamples:
+    - "m15": "15m"
+    - "m3": "3m"
+  transformBars:
+    - "m15": fillgap m15 100%
+  indicators:
+    - "m3Stoch":
+        function: stochastic window=14, d=3, k=3, fast=False
+        dataframe: m3
+    - "m15Stoch":
+        function: stochastic window=14, d=3, k=3, fast=False
+        dataframe: m15
+    - "m15Macd":
+        function: macd fast=3, slow=10, smooth=16
+        dataframe: m15
+    - "m3Macd":
+        function: macd fast=3, slow=10, smooth=16
+        series: m15.close
+
+  riskAssessor:
+    maxTrade: 10
+    maxActiveTrade: 2
+    maxLoss: 1000
+    maxCapitalPerTrade: 50000
+    capital: 100000
+    marginPerTrade: 1000
+    targetRation: 1.2
+
+  positions:
+    - name: longPosition
+      openCondition: m3Stoch.k > m3.Stoch.d && m3Macd.histogram cross 0 && m15.Macd.histogram > 0 # default not(position.longPosition.active)
+      postcondition: ""
+      closeCondition: ""
+      action: buy
+      stoploss: 150 # 0.5% / m15.low  auto closes position
+      target: 180 # 1.2% auto closes position
+      pnl: 0
+      timer: 1h
+
+  onOpenPosition:
+    - alert open
+  onClosePosition:
+    - alert close
+  onTradeFill:
+    - alert tradefill
+
+  actions:
+  - name: buy
+    function: buy quantity=50 mis
+  - name: sell
+    function: sell quantity=50 mis
+  - name: buyAlert
+    function: buyAlert quantity=50 mis bot=telegramBot
+  - name: sell
+    function: sellAlert quantity=50 mis bot=telegramBot
+
+  preload: '1d'
+  backtest: False
+  backfill: True
+  backtestStart: "2022-07-05 00:15:00"
+  backtestEnd: date
+  output: output.csv
+
+bots:
+  - name: telegramBot
+    token: ""
+broker:
+  name: zerodha
+  user: user
+  password: password
+  twoFA: twofa
+database:
+  name: kinetick
+  host: mongodb
+  user: user
+  password: password
