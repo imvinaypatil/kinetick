@@ -2,6 +2,7 @@ version: 1
 
 strategy:
   name: Bull
+  symbols: acc nifty niftybank # screener
   refreshFrequency: "1m"
   barResolution: 1m window=800
   barResamples:
@@ -35,11 +36,11 @@ strategy:
   positions:
     - name: longPosition
       openCondition: m3Stoch.k > m3.Stoch.d && m3Macd.histogram cross 0 && m15.Macd.histogram > 0 # default not(position.longPosition.active)
-      postcondition: ""
       closeCondition: ""
-      action: buy
+      openAction: buy
+      closeAction: sell
       stoploss: 150 # 0.5% / m15.low  auto closes position
-      target: 180 # 1.2% auto closes position
+      target: 180 # 1.2% / longPosition.pnl > 500 or longPosition.pnl < 500 auto closes position
       pnl: 0
       timer: 1h
 
@@ -75,8 +76,12 @@ broker:
   user: user
   password: password
   twoFA: twofa
-database:
+store:
   name: kinetick
+  type: database
   host: mongodb
   user: user
+  password: password
+web:
+  port: 8080
   password: password
