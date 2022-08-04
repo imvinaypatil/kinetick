@@ -247,7 +247,7 @@ class Broker():
                 return
 
             # order canceled? do some cleanup
-            if hasattr(msg, 'status') and "CANCELLED" in msg.status.upper():
+            if hasattr(msg, 'status') and "CANCELLED" in msg.state.upper():
                 if msg.orderId in self.orders.recent.keys():
                     symbol = self.orders.recent[msg.orderId]['symbol']
                     try:

@@ -8,7 +8,7 @@ class PositionValidityEnum(enum.Enum):
     NORMAL = 'NORMAL'
 
 
-class PositionStatusEnum(enum.Enum):
+class PositionStateEnum(enum.Enum):
     CREATED = 'CREATED'
     OPEN = 'OPEN'
     FILLED = 'FILLED'
@@ -23,9 +23,20 @@ class PositionDirectionEnum(enum.Enum):
 
 
 class RawBrokerOrder:
+    __dict__ = {}
+
     def __init__(self, orderId: str, brokerRef: BrokerEnum):
-        self.orderId = orderId
-        self.brokerRef = brokerRef
+        self.__dict__['orderId'] = orderId
+        self.__dict__['brokerRef'] = brokerRef
+
+    def __getitem__(self, item) -> any:
+        return self.__dict__['item']
+
+    def __setitem__(self, key, value):
+        self.__dict__['key'] = value
+
+    def serialize(self):
+        return self.__dict__
 
 
 class Position:
@@ -49,7 +60,7 @@ class Position:
     exitedAt = ""
     stoploss = ""
     target = 0
-    status = PositionStatusEnum.CREATED
+    state = PositionStateEnum.CREATED
     rawBrokerOrder = None
 
     def __init__(self, ticker: str, tickerId: str, exchange: str, entryPrice: float, direction):
@@ -72,16 +83,16 @@ class Position:
         self.validityType = validity
 
     def isActive(self):
-        return self.status is not PositionStatusEnum.EXITED
+        return self.state is not PositionStateEnum.EXITED
 
-    def setStatus(self, status: PositionStatusEnum):
-        self.status = status
+    def setState(self, status: PositionStateEnum):
+        self.state = status
 
     def getBrokerOrder(self) -> RawBrokerOrder:
         return self.rawBrokerOrder
 
-    def getStatus(self) -> PositionStatusEnum:
-        return self.status
+    def getState(self) -> PositionStateEnum:
+        return self.state
 
     def setDirection(self, direction: PositionDirectionEnum):
         self.direction = direction

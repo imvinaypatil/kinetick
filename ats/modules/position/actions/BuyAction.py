@@ -1,5 +1,5 @@
 from ats.modules.position.actions.ABCPositionAction import ABCPositionAction
-from ats.modules.position.aggregates.Position import Position, PositionStatusEnum, PositionDirectionEnum
+from ats.modules.position.aggregates.Position import Position, PositionStateEnum, PositionDirectionEnum
 from ats.modules.position.services.PositionService import PositionService
 from ats.shared.types.enums import TransactionTypeEnum
 

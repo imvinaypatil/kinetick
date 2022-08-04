@@ -1,5 +1,5 @@
 from ats.modules.broker.clients.BrokerClient import BrokerClient
-from ats.modules.position.aggregates.Position import Position, RawBrokerOrder, PositionStatusEnum
+from ats.modules.position.aggregates.Position import Position, RawBrokerOrder, PositionStateEnum
 
 
 class BrokerService:
@@ -17,10 +17,10 @@ class BrokerService:
     def exitOrder(self, order: RawBrokerOrder) -> RawBrokerOrder:
         """if order is not filled yet then cancel the order otherwise place a reverse order against the open position
         to close it."""
-        if self.client.orderStatus(order) is PositionStatusEnum.OPEN:
+        if self.client.orderStatus(order) is PositionStateEnum.OPEN:
             return self.client.cancelOrder(order)
 
         # TODO if there's enough holdings with same qty then place reverse order
 
-    def orderStatus(self, order: RawBrokerOrder) -> PositionStatusEnum:
+    def orderStatus(self, order: RawBrokerOrder) -> PositionStateEnum:
         return self.client.orderStatus(order)
