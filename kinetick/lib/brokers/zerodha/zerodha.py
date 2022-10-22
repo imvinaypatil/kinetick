@@ -7,6 +7,8 @@ import requests
 import logging
 import os
 
+from kinetick.bot import Bot
+
 from kinetick.enums import SecurityType, PositionType
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -150,13 +152,23 @@ class Zerodha():
         self.orders = {}  # TODO initialize with pending orders
         self.symbol_orders = {}
         # =====
+        Bot().send_message("Enter TOTP sent to Zerodha mobile app using /zlogin command")
+        Bot().add_command_handler("zlogin", self.zloginCmdHandler)
 
-    def login(self):
+
+    def zloginCmdHandler (self, update, context):
+        totp = update.message.text.split()[-1]
+        try:
+            self.login(totp)
+        except Exception as e:
+            Bot().send_message(str(e))
+
+    def login(self, totp=None):
         res = self._post("login", {'user_id': self.user_id, 'password': self.password})
         time.sleep(1)
         res = self._session.post(self.base_url + self._routes["twofa"],
                                  {'user_id': res['user_id'], 'request_id': res['request_id'],
-                                  'twofa_value': self.pin})
+                                  'twofa_value': totp})
         data = res.json()
         if data['status'] == 'success':
             logger.info("logged into zerodha")
