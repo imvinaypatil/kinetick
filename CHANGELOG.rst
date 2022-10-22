@@ -1,5 +1,10 @@
 Release Notes
 =============
+1.0.8rrc3
+---------
+*Aug 4, 2022*
+
+- add talib.STOCHRSIS
 
 1.0.8
 --------

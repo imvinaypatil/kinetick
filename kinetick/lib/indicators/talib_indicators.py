@@ -351,6 +351,34 @@ def STOCHRSI(data, **kwargs):
     return talib.STOCHRSI(prices, **kwargs)
 
 
+def STOCHRSIS(data, **kwargs):
+    """
+    # this is the library function
+    # >>> k, d = talib.STOCHRSI(c)
+
+    # this produces the same result, calling STOCHF
+    # >>> rsi = talib.RSI(c)
+    # >>> k, d = talib.STOCHF(rsi, rsi, rsi)
+
+    # you might want this instead, calling STOCH
+    # >>> rsi = talib.RSI(c)
+    # >>> k, d = talib.STOCH(rsi, rsi, rsi)
+    Parameters:
+        fastk_period: 5
+        slowk_period: 3
+        slowk_matype: 0
+        slowd_period: 3
+        slowd_matype: 0
+    Outputs:
+        slowk
+        slowd
+        :param data: pandas.df
+    """
+    _check_talib_presence()
+    prices = RSI(data)
+    return talib.STOCH(prices, prices, prices, **kwargs)
+
+
 def TRIX(data, **kwargs):
     _check_talib_presence()
     prices = _extract_series(data)
