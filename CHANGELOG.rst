@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+1.0.8
+--------
+*October 22, 2022*
+
+- bot: add zerodha login with totp command
+
 1.0.8rc1
 --------
 *October 29, 2021*
