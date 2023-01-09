@@ -20,7 +20,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='kinetick',
-    version='1.0.12',
+    version='1.0.13',
     description='Simplifying Trading',
     long_description=long_description,
     url='https://github.com/imvinaypatil/kinetick',
@@ -51,7 +51,7 @@ setup(
         'numpy>=1.11.1', 'pandas>=0.22.0',
         'pytz>=2016.6.1', 'requests>=2.10.0', 'pyzmq>=15.2.1',
         'mongoengine>=0.20.0',
-        'python-telegram-bot>=12.7', 'paho-mqtt>=1.5.0',
+        'python-telegram-bot==12.7', 'paho-mqtt>=1.5.0',
         'TA-Lib>=0.4.18', 'webull-12>=2023.0.1#egg=webull'
     ],
     entry_points={
