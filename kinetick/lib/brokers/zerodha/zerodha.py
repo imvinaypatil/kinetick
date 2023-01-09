@@ -164,6 +164,10 @@ class Zerodha():
             Bot().send_message(str(e))
 
     def login(self, totp=None):
+        if totp is None:
+            logger.warning("TOTP is required to login to zerodha")
+            Bot().send_message("Autologin is disabled. Enter TOTP sent to Zerodha mobile app using /zlogin command")
+            return
         res = self._post("login", {'user_id': self.user_id, 'password': self.password})
         time.sleep(1)
         res = self._session.post(self.base_url + self._routes["twofa"],
