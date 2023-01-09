@@ -78,6 +78,9 @@ Install using ``pip``:
 
     $ pip install kinetick
 
+Telegram bot must be configured in order to take TOTP input for zerodha login
+
+    use ``/zlogin <totp>`` command to login to zerodha
 
 Quickstart
 ==========
@@ -219,7 +222,9 @@ While the Strategy running in the background:
 
   Assuming you have added the telegram bot to your chat
 
-- ``/login <password>`` - password can be found in the strategy console.
+- ``/login <password>`` - Password can be found in the strategy console. This step is required if you have not provided your telegram chat id as an env var
+- ``/zlogin <totp>`` Command to login to zerodha using totp
+
 
 commands
 --------
