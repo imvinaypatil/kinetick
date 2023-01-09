@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = '1.0.13'
+__version__ = '1.0.14'
 __author__ = 'vin8tech'
 
 import os
