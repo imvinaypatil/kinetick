@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from decimal import Decimal
 from datetime import datetime
 from math import floor
 
@@ -77,14 +78,22 @@ class RiskAssessor(Borg):
     def _should_trade(self, entry_price, stop_loss, quantity=None):
         spread = abs(entry_price - stop_loss)
         spread = 5 * round(spread / 5, 2)
-        maxsize = floor(max(1, int(self.risk_per_trade / spread)))
-        maxsize = min(maxsize, int(self.capital / entry_price))
-        _quantity = quantity or maxsize
-        margin = _quantity * spread
+        margin = 0
+        _quantity = 0
+        maxsize = 0
+
+        if Decimal(spread) > Decimal(0.0):
+            maxsize = floor(max(1, int(self.risk_per_trade / spread)))
+            maxsize = min(maxsize, int(self.capital / entry_price))
+            _quantity = quantity or maxsize
+            margin = _quantity * spread
+
         should_trade = True
         reason = None
-
-        if self.available_margin <= 0:
+        if Decimal(spread) <= Decimal(0.0):
+            should_trade = False
+            reason = "Stoploss spread results in negative"
+        elif self.available_margin <= 0:
             should_trade = False
             reason = "Insufficient margin"
         elif margin >= self.available_margin:

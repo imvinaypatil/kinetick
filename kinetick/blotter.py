@@ -1164,7 +1164,7 @@ class Blotter():
             db.to_csv(self.args['symbols'], header=True, index=False)
             chmod(self.args['symbols'])
         except Exception as e:
-            self.log_blotter.error("Skipping symbols file since it couldn't be found in the system", e)
+            self.log_blotter.warning("Skipping symbols file since it couldn't be found in the system")
 
     # -------------------------------------------
 

@@ -34,9 +34,16 @@ class BuyLowSellHigh(Algo):
     buy low sell high algorithm
     """
 
+    def init_instruments(self, instruments=None):
+        if instruments is None:
+            instruments = self.instruments
+        for instrument in instruments:
+            if not self.backtest:
+                self.sync_bars(instrument)
+
     def on_start(self):
         """ initialize your strategy. Perform any operation that are required to be run before starting algo."""
-        pass
+        self.init_instruments()
 
     # ---------------------------------------
     def on_quote(self, instrument):
@@ -62,28 +69,32 @@ class BuyLowSellHigh(Algo):
 
     # ---------------------------------------
     def on_bar(self, instrument):
-        bars = instrument.get_bars(lookback=3)
-        if instrument.position is None:
-            """ check if there any open positions on the instrument."""
-            if len(bars) >= 2:  # at least 2 bars are needed
-                if bars['close'][-1] < bars['close'][0]:
-                    position = instrument.create_position(entry_price=bars['close'][-1],
-                                                          stop_loss=bars['low'][-1],
-                                                          quantity=1, pos_type=PositionType.MIS)
-                    """ Create position instance with inputs. 
-                        If quantity is not provided then it will be automatically calculated based on risk parameters.
-                    """
-                    instrument.open_position(position)
-                    """ instrument.open_position() will send order request to bot and 
-                        attach the position instance to instrument to indicate about open position.
-                        when order request is accepted from bot the position becomes active.
-                    """
-        elif instrument.position.active:
-            """ check IF the position was executed in bot """
-            if len(bars) >= 2:
-                if bars['close'][-1] > bars['close'][0]:
-                    instrument.close_position(instrument.position)
-                    """ close the position. """
+        try:
+            bars = instrument.get_bars(lookback=3)
+            self.log.info(bars)
+            if instrument.position is None:
+                """ check if there any open positions on the instrument."""
+                if len(bars) >= 2:  # at least 2 bars are needed
+                    if bars['close'][-1] < bars['close'][0]:
+                        position = instrument.create_position(entry_price=bars['close'][-1],
+                                                              stop_loss=bars['low'][-1],
+                                                              quantity=1, pos_type=PositionType.MIS)
+                        """ Create position instance with inputs. 
+                            If quantity is not provided then it will be automatically calculated based on risk parameters.
+                        """
+                        instrument.open_position(position)
+                        """ instrument.open_position() will send order request to bot and 
+                            attach the position instance to instrument to indicate about open position.
+                            when order request is accepted from bot the position becomes active.
+                        """
+            elif instrument.position.active:
+                """ check IF the position was executed in bot """
+                if len(bars) >= 2:
+                    if bars['close'][-1] > bars['close'][0]:
+                        instrument.close_position(instrument.position)
+                        """ close the position. """
+        except Exception as e:
+            self.log.warn(e)
 
     # --------------------------------------------
 

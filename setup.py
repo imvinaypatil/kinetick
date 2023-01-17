@@ -20,7 +20,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='kinetick',
-    version='1.0.14',
+    version='1.0.15',
     description='Simplifying Trading',
     long_description=long_description,
     url='https://github.com/imvinaypatil/kinetick',
@@ -48,11 +48,11 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'demo', 'demos', 'examples']),
     install_requires=[
         'python-dateutil>=2.5.3',
-        'numpy>=1.11.1', 'pandas>=0.22.0',
+        'numpy==1.21.2', 'pandas==1.3.2',
         'pytz>=2016.6.1', 'requests>=2.10.0', 'pyzmq>=15.2.1',
         'mongoengine>=0.20.0',
         'python-telegram-bot==12.7', 'paho-mqtt>=1.5.0',
-        'TA-Lib>=0.4.18', 'webull-12>=2023.0.1#egg=webull'
+        'TA-Lib>=0.4.18', 'webull-12>=2023.0.2#egg=webull'
     ],
     entry_points={
         'console_scripts': [

@@ -29,7 +29,11 @@
     about integration with broker and data streams (currently integrates with zerodha [*]_).
     Kinetick is aimed to make systematic trading available for everyone.
 
-Leave the heavy lifting to kinetick so that you can focus on building strategies.
+Leave the heavy lifting to kinetick and you focus on building strategies.
+
+WARNING
+
+This project is still in its early stages, please be cautious when dealing with real money.
 
 `Changelog » <./CHANGELOG.rst>`_
 

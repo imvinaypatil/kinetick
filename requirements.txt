@@ -8,11 +8,10 @@ pymongo
 mongoengine
 pip
 wheel
-cryptography
 py
 lxml
 setuptools
 TA-Lib
 python-telegram-bot
 paho-mqtt
-git+https://github.com/imvinaypatil/webull.git
+webull-12

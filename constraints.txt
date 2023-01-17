@@ -8,10 +8,10 @@ pymongo>=3.11.3
 mongoengine>=0.23.0
 pip>=21.2.4
 wheel~=0.34.2
-cryptography~=2.9.2
 py~=1.8.1
 lxml~=4.5.0
 setuptools~=41.2.0
 TA-Lib>=0.4.18
 python-telegram-bot==12.7
 paho-mqtt>=1.5.1
+webull-12==2023.0.2

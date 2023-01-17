@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y wget && apt-get install -y build-essent
 RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
   tar -xvzf ta-lib-0.4.0-src.tar.gz && \
   cd ta-lib/ && \
-  ./configure --prefix=/usr && \
+  ./configure --prefix=/usr --build=aarch64-unknown-linux-gnu && \
   make && \
   make install
 

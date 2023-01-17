@@ -29,7 +29,7 @@ ENV dbport=27017
 ENV dbuser=kinetick
 ENV dbpassword=kinetick
 ENV dbname=kinetick
-ENV dbskip=false
+ENV dbskip=true
 ENV LOGLEVEL=INFO
 
 CMD [ "python", "-m", "kinetick.factory.blotter" ]

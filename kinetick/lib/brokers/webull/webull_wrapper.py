@@ -68,7 +68,7 @@ class Webull:
         self.password = ""
         self.paper = paper
         if not paper:
-            self.wb = wb()
+            self.wb = wb(region_code=12)
         else:
             self.wb = paper_webull()
 
