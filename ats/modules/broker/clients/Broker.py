@@ -4,7 +4,7 @@ from ats.modules.position.aggregates.Position import PositionValidityEnum, RawBr
 from ats.shared.types.enums import InstrumentTypeEnum, ExchangeEnum, TransactionTypeEnum, OrderTypeEnum
 
 
-class BrokerClient(metaclass=abc.ABCMeta):
+class Broker(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def connect(self):

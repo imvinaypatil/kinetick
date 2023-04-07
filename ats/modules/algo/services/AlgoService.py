@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Modified version from QTPyLib: Quantitative Trading Python Library
-# https://github.com/ranaroussi/qtpylib
-# Copyright 2016-2018 Ran Aroussi
-#
-# Modified by vin8tech
-# Copyright 2019-2021 vin8tech, vinay patil
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -20,7 +13,7 @@
 # limitations under the License.
 #
 
-import argparse
+ import argparse
 import inspect
 import sys
 import logging
@@ -51,12 +44,8 @@ if sys.version_info < (3, 4):
     raise SystemError("Kinetick requires Python version >= 3.4")
 
 # =============================================
-# Configure logging
-create_logger(__name__, level=os.getenv('LOGLEVEL') or logging.INFO)
-
-# =============================================
 # set up threading pool
-__threads__ = utils.read_single_argv("--threads")
+__threads__ = os.cpu_count()
 __threads__ = int(__threads__) if utils.is_number(__threads__) else None
 asynctools.multitasking.createPool(__name__, __threads__)
 
@@ -65,48 +54,6 @@ asynctools.multitasking.createPool(__name__, __threads__)
 
 
 class Algo(Broker):
-    """Algo class initializer (sub-class of Broker)
-
-    :Parameters:
-
-        instruments : list
-            List of contract tuples. Default is empty list
-        resolution : str
-            Desired bar resolution (using pandas resolution: 1T, 1H, etc).
-            Use K for tick bars. Default is 1T (1min)
-        tick_window : int
-            Length of tick lookback window to keep. Defaults to 1
-        bar_window : int
-            Length of bar lookback window to keep. Defaults to 100
-        timezone : str
-            Convert broker timestamps to this timezone.
-            Defaults to UTC
-        preload : str
-            Preload history when starting algo (Pandas resolution: 1H, 1D, etc)
-            Use K for tick bars.
-        continuous : bool
-            Tells preloader to construct continuous Futures contracts
-            (default is True)
-        blotter : str
-            Log trades to this Blotter's Datastore (default is "auto detect")
-        log: str
-            Path to store trade data (default: None)
-        backtest: bool
-            Whether to operate in Backtest mode (default: False)
-        start: str
-            Backtest start date (YYYY-MM-DD [HH:MM:SS[.MS]). Default is None
-        end: str
-            Backtest end date (YYYY-MM-DD [HH:MM:SS[.MS]). Default is None
-        data : str
-            Path to the directory with Kinetick-compatible CSV files (Backtest)
-        output: str
-            Path to save the recorded data (default: None)
-        risk_assessor: RiskAssessor
-            All instances of Algo will use same global risk assessor if provided.
-        name: String
-            Strategy name. Please provide unique identifier to your algo if running multiple algos.
-    """
-
     __metaclass__ = ABCMeta
 
     def __init__(self, instruments, risk_assessor: RiskAssessor = None, resolution="1m",

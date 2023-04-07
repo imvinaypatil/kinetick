@@ -24,6 +24,8 @@ import logging
 import sys
 
 from datetime import datetime
+from typing import NamedTuple, Optional
+
 import dateutil.parser
 from pandas import DataFrame
 
@@ -35,7 +37,6 @@ import copy
 from webull.streamconn import StreamConn
 
 from kinetick.enums import COMMON_TYPES
-from kinetick.models import Contract
 from kinetick.utils import utils, asynctools
 
 # ---------------------------------------------
@@ -44,6 +45,17 @@ utils.create_logger('webull-client', LOGLEVEL)
 
 
 # =============================================
+
+class Contract(NamedTuple):
+    tickerId: str
+    symbol: str
+    sec_type: Optional[str] = None
+    exchange: Optional[str] = None
+    currency: Optional[str] = None
+    expiry: Optional[str] = None
+    strike: Optional[str] = None
+    right: Optional[str] = None
+
 
 class Webull:
 
@@ -1163,6 +1175,7 @@ class Webull:
 
     # -----------------------------------------
     def createContract(self, contractTuple, **kwargs):
+        # https://www.interactivebrokers.com/en/software/api/apiguide/java/contract.htm
 
         contractString = self.contractString(contractTuple)
 

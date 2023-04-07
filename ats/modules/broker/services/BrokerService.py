@@ -1,10 +1,10 @@
-from ats.modules.broker.clients.BrokerClient import BrokerClient
+from ats.modules.broker.clients.Broker import Broker
 from ats.modules.position.aggregates.Position import Position, RawBrokerOrder, PositionStateEnum
 
 
 class BrokerService:
 
-    def __init__(self, client: BrokerClient):
+    def __init__(self, client: Broker):
         self.client = client
 
     def createOrderDraft(self, position: Position) -> RawBrokerOrder:

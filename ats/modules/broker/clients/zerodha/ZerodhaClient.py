@@ -1,10 +1,10 @@
-from ats.bin.zerodha import Zerodha
-from ats.modules.broker.clients.BrokerClient import BrokerClient, TransactionTypeEnum
+from ats.bin.Zerodha import Zerodha
+from ats.modules.broker.clients.Broker import Broker, TransactionTypeEnum
 from ats.modules.position.aggregates.Position import RawBrokerOrder, PositionValidityEnum, PositionStateEnum
 from ats.shared.types.enums import InstrumentTypeEnum, ExchangeEnum, BrokerEnum, OrderTypeEnum
 
 
-class ZerodhaClient(BrokerClient):
+class ZerodhaClient(Broker):
 
     def __init__(self, user_id, password, pin):
         self.user_id = user_id
