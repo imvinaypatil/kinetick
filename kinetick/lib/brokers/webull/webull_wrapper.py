@@ -45,18 +45,13 @@ utils.create_logger('webull-client', LOGLEVEL)
 
 # =============================================
 
+"""
+    The idea of this class is to facilitate
+    1. creation of contract objects based on csv spec. - exposes couple of create contract & register symbol methods which are used by blotter.
+    2. Establish stream connection with ticker data provider.
+    3. Populate DataFrame objects for quotes/ticks on receiving messages from broker and relay the message to blotter.
+"""
 class Webull:
-
-    # -----------------------------------------
-    @staticmethod
-    def roundClosestValid(val, res=0.01, decimals=None):
-        if val is None:
-            return None
-        """ round to closest resolution """
-        if decimals is None and "." in str(res):
-            decimals = len(str(res).split('.')[1])
-
-        return round(round(val / res) * res, decimals)
 
     # -----------------------------------------
     def __init__(self, paper=False):
@@ -133,24 +128,10 @@ class Webull:
 
         # trailing stops
         self.trailingStops = {}
-        # "tickerId" = {
-        #     orderId: ...
-        #     lastPrice: ...
-        #     trailPercent: ...
-        #     trailAmount: ...
-        #     quantity: ...
-        # }
+
 
         # triggerable trailing stops
         self.triggerableTrailingStops = {}
-        # "tickerId" = {
-        #     parentId: ...
-        #     stopOrderId: ...
-        #     triggerPrice: ...
-        #     trailPercent: ...
-        #     trailAmount: ...
-        #     quantity: ...
-        # }
 
         # holds options data
         optionsDF = DataFrame({
@@ -223,18 +204,6 @@ class Webull:
             self._disconnected_by_user = True
             self.connected = False
             self.started = False
-
-    # -----------------------------------------
-    def getServerTime(self):
-        """ get the current time on Server """
-        self.time = datetime.utcnow()
-
-    # -----------------------------------------
-
-    # -----------------------------------------
-    def getAccountDetails(self):
-        """ get the current user details """
-        self.wb.get_account()
 
     # -----------------------------------------
     @staticmethod
@@ -424,190 +393,6 @@ class Webull:
 
         # fire callback
         self.callbacks(caller="handleContractDetails", msg=msg)
-
-    # -----------------------------------------
-    # Account handling
-    # -----------------------------------------
-    def handleAccount(self, msg):
-        """
-        handle account info update
-        Obsolete.
-        """
-
-        # parse value
-        try:
-            msg.value = float(msg.value)
-        except Exception:
-            msg.value = msg.value
-            if msg.value in ['true', 'false']:
-                msg.value = (msg.value == 'true')
-
-        try:
-            # log handler msg
-            self.log_msg("account", msg)
-
-            # new account?
-            if msg.accountName not in self._accounts.keys():
-                self._accounts[msg.accountName] = {}
-
-            # set value
-            self._accounts[msg.accountName][msg.key] = msg.value
-
-            # fire callback
-            self.callbacks(caller="handleAccount", msg=msg)
-        except Exception:
-            pass
-
-    def _get_active_account(self, account):
-        account = None if account == "" else None
-        if account is None:
-            if self.default_account is not None:
-                return self.default_account
-            elif len(self._accounts) > 0:
-                return self.accountCodes[0]
-        return account
-
-    @property
-    def accounts(self):
-        return self._accounts
-
-    @property
-    def account(self):
-        return self.getAccount()
-
-    @property
-    def accountCodes(self):
-        return list(self._accounts.keys())
-
-    @property
-    def accountCode(self):
-        return self.accountCodes[0]
-
-    def getAccount(self, account=None):
-        if len(self._accounts) == 0:
-            return {}
-
-        account = self._get_active_account(account)
-
-        if account is None:
-            if len(self._accounts) > 1:
-                raise ValueError("Must specify account number as multiple accounts exists.")
-            return self._accounts[list(self._accounts.keys())[0]]
-
-        if account in self._accounts:
-            return self._accounts[account]
-
-        raise ValueError("Account %s not found in account list" % account)
-
-    # -----------------------------------------
-    # Position handling
-    # -----------------------------------------
-    def handlePosition(self, msg):
-        """ handle positions changes """
-
-        # log handler msg
-        self.log_msg("position", msg)
-
-        # contract identifier
-        contract_tuple = self.contract_to_tuple(msg.contract)
-        contractString = self.contractString(contract_tuple)
-
-        # try creating the contract
-        self.registerContract(msg.contract)
-
-        # new account?
-        if msg.account not in self._positions.keys():
-            self._positions[msg.account] = {}
-
-        # if msg.pos != 0 or contractString in self.contracts.keys():
-        self._positions[msg.account][contractString] = {
-            "symbol": contractString,
-            "position": int(msg.pos),
-            "avgCost": float(msg.avgCost),
-            "account": msg.account
-        }
-
-        # fire callback
-        self.callbacks(caller="handlePosition", msg=msg)
-
-    @property
-    def positions(self):
-        return self.getPositions()
-
-    def getPositions(self, account=None):
-        if len(self._positions) == 0:
-            return {}
-
-        account = self._get_active_account(account)
-
-        if account is None:
-            if len(self._positions) > 1:
-                raise ValueError("Must specify account number as multiple accounts exists.")
-            return self._positions[list(self._positions.keys())[0]]
-
-        if account in self._positions:
-            return self._positions[account]
-
-        raise ValueError("Account %s not found in account list" % account)
-
-    # -----------------------------------------
-    # Portfolio handling
-    # -----------------------------------------
-    def handlePortfolio(self, msg):
-        """ handle portfolio updates """
-
-        # log handler msg
-        self.log_msg("portfolio", msg)
-
-        # contract identifier
-        contract_tuple = self.contract_to_tuple(msg.contract)
-        contractString = self.contractString(contract_tuple)
-
-        # try creating the contract
-        self.registerContract(msg.contract)
-
-        # new account?
-        if msg.accountName not in self._portfolios.keys():
-            self._portfolios[msg.accountName] = {}
-
-        self._portfolios[msg.accountName][contractString] = {
-            "symbol": contractString,
-            "position": int(msg.position),
-            "marketPrice": float(msg.marketPrice),
-            "marketValue": float(msg.marketValue),
-            "averageCost": float(msg.averageCost),
-            "unrealizedPNL": float(msg.unrealizedPNL),
-            "realizedPNL": float(msg.realizedPNL),
-            "totalPNL": float(msg.realizedPNL) + float(msg.unrealizedPNL),
-            "account": msg.accountName
-        }
-
-        # fire callback
-        self.callbacks(caller="handlePortfolio", msg=msg)
-
-    @property
-    def portfolios(self):
-        return self._portfolios
-
-    @property
-    def portfolio(self):
-        return self.getPortfolio()
-
-    def getPortfolio(self, account=None):
-        if len(self._portfolios) == 0:
-            return {}
-
-        account = self._get_active_account(account)
-
-        if account is None:
-            if len(self._portfolios) > 1:
-                raise ValueError("Must specify account number as multiple accounts exists.")
-            return self._portfolios[list(self._portfolios.keys())[0]]
-
-        if account in self._portfolios:
-            return self._portfolios[account]
-
-        raise ValueError("Account %s not found in account list" % account)
 
     # -----------------------------------------
     # Order handling
@@ -878,113 +663,12 @@ class Webull:
         ts = dateutil.parser.parse(data['tradeTime']) \
             .strftime(COMMON_TYPES["DATE_TIME_FORMAT_LONG_MILLISECS"])
         df2use[tickerId].index = [ts]
-        # self.log.debug("[TICK TS]: %s", ts)
 
-        # handle trailing stop orders
-        # if self.contracts[msg.tickerId].m_secType not in ("OPT", "FOP"):
-        #     self.triggerTrailingStops(msg.tickerId)
-        #     self.handleTrailingStops(msg.tickerId)
 
         # fire callback
         self.callbacks(caller="handleTickString", msg=msg)
 
-        # elif (msg.tickType == TYPES["FIELD_RTVOLUME"]):
-        #
-        #     # log handler msg
-        #     # self.log_msg("rtvol", msg)
-        #
-        #     tick = dict(TYPES["RTVOL_TICKS"])
-        #     (tick['price'], tick['size'], tick['time'], tick['volume'],
-        #      tick['wap'], tick['single']) = msg.value.split(';')
-        #
-        #     try:
-        #         tick['last'] = float(tick['price'])
-        #         tick['lastsize'] = float(tick['size'])
-        #         tick['volume'] = float(tick['volume'])
-        #         tick['wap'] = float(tick['wap'])
-        #         tick['single'] = tick['single'] == 'true'
-        #         tick['instrument'] = self.tickerSymbol(msg.tickerId)
-        #
-        #         # parse time
-        #         s, ms = divmod(int(tick['time']), 1000)
-        #         tick['time'] = '{}.{:03d}'.format(
-        #             time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(s)), ms)
-        #
-        #         # add most recent bid/ask to "tick"
-        #         tick['bid'] = df2use[msg.tickerId]['bid'][0]
-        #         tick['bidsize'] = int(df2use[msg.tickerId]['bidsize'][0])
-        #         tick['ask'] = df2use[msg.tickerId]['ask'][0]
-        #         tick['asksize'] = int(df2use[msg.tickerId]['asksize'][0])
-        #
-        #         # self.log.debug("%s: %s\n%s", tick['time'], self.tickerSymbol(msg.tickerId), tick)
-        #
-        #         # fire callback
-        #         self.ibCallback(caller="handleTickString", msg=msg, tick=tick)
-        #
-        #     except Exception:
-        #         pass
 
-        # else:
-        #     # self.log.info("tickString-%s", msg)
-        #     # fire callback
-        #     self.ibCallback(caller="handleTickString", msg=msg)
-
-        # print(msg)
-
-    # -----------------------------------------
-    def handleTickOptionComputation(self, msg):
-        """
-        holds latest option data timestamp
-        only option price is kept at the moment
-        https://www.interactivebrokers.com/en/software/api/apiguide/java/tickoptioncomputation.htm
-        """
-
-        def calc_generic_val(data, field):
-            last_val = data['last_' + field].values[-1]
-            bid_val = data['bid_' + field].values[-1]
-            ask_val = data['ask_' + field].values[-1]
-            bid_ask_val = last_val
-            if bid_val != 0 and ask_val != 0:
-                bid_ask_val = (bid_val + ask_val) / 2
-            return max([last_val, bid_ask_val])
-
-        def valid_val(val):
-            return float(val) if val < 1000000000 else None
-
-        # create tick holder for ticker
-        if msg._tickerId not in self.optionsData.keys():
-            self.optionsData[msg._tickerId] = self.optionsData[0].copy()
-
-        col_prepend = ""
-        if msg.field == "FIELD_BID_OPTION_COMPUTATION":
-            col_prepend = "bid_"
-        elif msg.field == "FIELD_ASK_OPTION_COMPUTATION":
-            col_prepend = "ask_"
-        elif msg.field == "FIELD_LAST_OPTION_COMPUTATION":
-            col_prepend = "last_"
-
-        # save side
-        self.optionsData[msg._tickerId][col_prepend + 'imp_vol'] = valid_val(msg.impliedVol)
-        self.optionsData[msg._tickerId][col_prepend + 'dividend'] = valid_val(msg.pvDividend)
-        self.optionsData[msg._tickerId][col_prepend + 'delta'] = valid_val(msg.delta)
-        self.optionsData[msg._tickerId][col_prepend + 'gamma'] = valid_val(msg.gamma)
-        self.optionsData[msg._tickerId][col_prepend + 'vega'] = valid_val(msg.vega)
-        self.optionsData[msg._tickerId][col_prepend + 'theta'] = valid_val(msg.theta)
-        self.optionsData[msg._tickerId][col_prepend + 'price'] = valid_val(msg.optPrice)
-
-        # save generic/mid
-        data = self.optionsData[msg._tickerId]
-        self.optionsData[msg._tickerId]['imp_vol'] = calc_generic_val(data, 'imp_vol')
-        self.optionsData[msg._tickerId]['dividend'] = calc_generic_val(data, 'dividend')
-        self.optionsData[msg._tickerId]['delta'] = calc_generic_val(data, 'delta')
-        self.optionsData[msg._tickerId]['gamma'] = calc_generic_val(data, 'gamma')
-        self.optionsData[msg._tickerId]['vega'] = calc_generic_val(data, 'vega')
-        self.optionsData[msg._tickerId]['theta'] = calc_generic_val(data, 'theta')
-        self.optionsData[msg._tickerId]['price'] = calc_generic_val(data, 'price')
-        self.optionsData[msg._tickerId]['underlying'] = valid_val(msg.undPrice)
-
-        # fire callback
-        self.callbacks(caller="handleTickOptionComputation", msg=msg)
 
     # -----------------------------------------
     # trailing stops
